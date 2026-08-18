@@ -411,6 +411,17 @@ class ChampionCritic(nn.Module):
     def forward(self, z_global: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         return self.value_head(z_global), self.win_head(z_global)
 
+    def predict_value(self, z_global: torch.Tensor) -> torch.Tensor:
+        value_logits, _ = self.forward(z_global)
+        probs = F.softmax(value_logits, dim=-1)
+        bin_centers = torch.linspace(-15.0, 15.0, steps=1001, device=probs.device)
+        expected_symlog = (probs * bin_centers).sum(dim=-1)
+        return torch.sign(expected_symlog) * torch.expm1(torch.abs(expected_symlog))
+
+    def predict_win_prob(self, z_global: torch.Tensor) -> torch.Tensor:
+        _, win_logit = self.forward(z_global)
+        return torch.sigmoid(win_logit)
+
 
 class ChampionPolicyNetwork(nn.Module):
     def __init__(self, spatial_channels: int = 64, global_dim: int = 256):

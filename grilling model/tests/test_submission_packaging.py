@@ -43,6 +43,7 @@ class TestSubmissionPackaging(unittest.TestCase):
     def test_build_submission_and_run_full_match(self):
         # 1. Build standalone submission.py
         weights_path = grilling_model_root / "weights" / "champion_weights.pt"
+        weights_path.parent.mkdir(parents=True, exist_ok=True)
         network = ChampionFullNetwork()
         torch.save(network.state_dict(), weights_path)
 

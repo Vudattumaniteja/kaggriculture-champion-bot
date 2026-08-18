@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Heavy competition replays and weights
+replays/
+weights/
+data/
+*.zip
+*.tar.gz
+
+# Huge temporary runs & benchmark dumps
+.scratch/*.json
+*.jsonl
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

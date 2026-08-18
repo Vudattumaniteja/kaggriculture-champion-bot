@@ -456,16 +456,21 @@ def get_manhattan_dist(p1: Tuple[int, int], p2: Tuple[int, int]) -> int:
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
 
 
-def get_step_towards(curr: Tuple[int, int], target: Tuple[int, int], occupied: Optional[Set[Tuple[int, int]]] = None) -> Tuple[str, Tuple[int, int]]:
+def get_step_towards(
+    curr: Tuple[int, int],
+    target: Tuple[int, int],
+    reserved_dests: Optional[Set[Tuple[int, int]]] = None,
+    unmoved_positions: Optional[Set[Tuple[int, int]]] = None
+) -> Tuple[str, Tuple[int, int]]:
     cx, cy = curr
     tx, ty = target
-    if cx == tx and cy == ty:
-        return "PASS", curr
+    reserved = reserved_dests or set()
+    unmoved = unmoved_positions or set()
 
-    occupied = occupied or set()
     moves: List[Tuple[str, Tuple[int, int]]] = []
     dx = tx - cx
     dy = ty - cy
+
     if abs(dx) >= abs(dy):
         if dx > 0:
             moves.append(("EAST", (cx + 1, cy)))
@@ -485,13 +490,26 @@ def get_step_towards(curr: Tuple[int, int], target: Tuple[int, int], occupied: O
         elif dx < 0:
             moves.append(("WEST", (cx - 1, cy)))
 
+    all_dirs = [("NORTH", (cx, cy - 1)), ("SOUTH", (cx, cy + 1)), ("EAST", (cx + 1, cy)), ("WEST", (cx - 1, cy))]
+    for d, pos in all_dirs:
+        if (d, pos) not in moves:
+            moves.append((d, pos))
+
     for direction, next_pos in moves:
         nx, ny = next_pos
-        if 0 <= nx < 10 and 0 <= ny < 10 and next_pos not in occupied:
-            return direction, next_pos
+        if not (0 <= nx < 10 and 0 <= ny < 10):
+            continue
+        if next_pos in reserved:
+            continue
+        if next_pos in unmoved:
+            continue
+        return direction, next_pos
 
-    for direction, (nx, ny) in [("NORTH", (cx, cy - 1)), ("SOUTH", (cx, cy + 1)), ("EAST", (cx + 1, cy)), ("WEST", (cx - 1, cy))]:
-        if 0 <= nx < 10 and 0 <= ny < 10 and (nx, ny) not in occupied:
+    if curr not in reserved:
+        return "PASS", curr
+
+    for direction, (nx, ny) in all_dirs:
+        if 0 <= nx < 10 and 0 <= ny < 10 and (nx, ny) not in reserved:
             return direction, (nx, ny)
 
     return "PASS", curr
@@ -515,7 +533,7 @@ def apply_market_guardrails(
     seeds = dict(private.get("seeds", {}) or {})
     money = float(my_farm.get("money", 0.0))
     day = int(obs.get("day", 0))
-    hour = int(obs.get("hour", 0))
+    hour = int(obs.get("hour", int(obs.get("step", 0)) % 24))
     unlocked_quads = set(my_farm.get("unlocked_quadrants", ["NW"]))
     hires_today = int(my_farm.get("hires_today", 0))
 
@@ -527,8 +545,9 @@ def apply_market_guardrails(
             if isinstance(t, dict) and t.get("animal") == "COW":
                 living_cows += 1
 
+    total_cows = living_cows + int(shed.get("COW", 0))
     market_orders: List[List[Any]] = []
-    cow_feed_reservation = max(4, living_cows * 2) if day < 28 else 0
+    cow_feed_reservation = total_cows * 2 if day < 28 else 0
 
     for i, prod in enumerate(PRODUCTS):
         qty = shed.get(prod, 0)
@@ -550,8 +569,13 @@ def apply_market_guardrails(
 
     remaining_shed_total = sum(shed.values())
     if hour == 23 and remaining_shed_total > 100:
-        excess = remaining_shed_total - 95
-        sorted_prods = sorted(shed.keys(), key=lambda p: float(prices.get(p, BASE_PRICES.get(p, 25.0))), reverse=True)
+        excess = remaining_shed_total - 100
+        sorted_prods = sorted(
+            [p for p in shed.keys() if shed[p] > 0],
+            key=lambda p: float(prices.get(p, BASE_PRICES.get(p, 25.0))),
+            reverse=True
+        )
+
         for prod in sorted_prods:
             if excess <= 0:
                 break
@@ -567,6 +591,16 @@ def apply_market_guardrails(
                     market_orders.append(["SELL", prod, dump_qty])
                 shed[prod] -= dump_qty
                 excess -= dump_qty
+
+        if excess > 0 and shed.get("WHEAT", 0) > 0:
+            dump_wheat = min(shed["WHEAT"], excess)
+            existing = [o for o in market_orders if o[0] == "SELL" and o[1] == "WHEAT"]
+            if existing:
+                existing[0][2] += dump_wheat
+            else:
+                market_orders.append(["SELL", "WHEAT", dump_wheat])
+            shed["WHEAT"] -= dump_wheat
+            excess -= dump_wheat
 
     if day <= 16 and land_expand_logit > 0.0:
         if "NE" not in unlocked_quads and money >= 1200:
@@ -599,7 +633,8 @@ def apply_market_guardrails(
 def solve_micro_actions(
     obs: Dict[str, Any],
     crop_heatmaps: Optional[np.ndarray] = None,
-    livestock_quotas: Optional[np.ndarray] = None
+    livestock_quotas: Optional[np.ndarray] = None,
+    lambda_logit: float = 1.0
 ) -> Tuple[List[Any], List[List[Any]]]:
     player = obs.get("player", 0)
     farms = obs.get("farms", [{}, {}])
@@ -610,30 +645,50 @@ def solve_micro_actions(
     farmer_pos = tuple(my_farm.get("farmer", [4, 4]))
     hands_pos = [tuple(h) for h in my_farm.get("hands", [])]
     tiles = my_farm.get("tiles", [])
+    shed = dict(private.get("shed", {}) or {})
+    seeds = dict(private.get("seeds", {}) or {})
+    inventories = private.get("inventories", []) or []
 
     units = [farmer_pos] + hands_pos
     num_units = len(units)
     unit_actions: List[Optional[List[Any]]] = [None] * num_units
-    occupied_destinations: Set[Tuple[int, int]] = set()
+    reserved_destinations: Set[Tuple[int, int]] = set()
+    unmoved_units: Set[int] = set(range(num_units))
+    available_seeds = dict(seeds)
 
     for u_idx, u_pos in enumerate(units):
         ux, uy = u_pos
         u_tile = tiles[uy][ux] if uy < len(tiles) and ux < len(tiles[uy]) else None
+        u_inv = inventories[u_idx] if u_idx < len(inventories) else {}
+
         if isinstance(u_tile, dict):
             k = u_tile.get("kind")
             an = u_tile.get("animal")
             if k in ["COOP", "PASTURE"] and an:
-                if not u_tile.get("fed_today", False):
+                if not u_tile.get("fed_today", False) and u_inv.get("WHEAT", 0) > 0:
                     unit_actions[u_idx] = ["FEED"]
-                    occupied_destinations.add(u_pos)
+                    u_inv["WHEAT"] -= 1
+                    u_tile["fed_today"] = True
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
                     continue
                 if not u_tile.get("cared_today", False):
                     unit_actions[u_idx] = ["CARE"]
-                    occupied_destinations.add(u_pos)
+                    u_tile["cared_today"] = True
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
                     continue
                 if u_tile.get("yield_units", 0) > 0:
                     unit_actions[u_idx] = ["HARVEST"]
-                    occupied_destinations.add(u_pos)
+                    u_tile["yield_units"] = 0
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
+                    continue
+                if u_tile.get("fertilizer_available", False):
+                    unit_actions[u_idx] = ["COLLECT_FERTILIZER"]
+                    u_tile["fertilizer_available"] = False
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
                     continue
             elif k == "PLANT":
                 crop = u_tile.get("crop", "CARROT")
@@ -644,15 +699,26 @@ def solve_micro_actions(
                     cspec["ongoing"] and age >= cspec["first_yield_day"] and yield_u > 0
                 ):
                     unit_actions[u_idx] = ["HARVEST"]
-                    occupied_destinations.add(u_pos)
+                    u_tile["yield_units"] = 0
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
                     continue
                 if not u_tile.get("watered_today", False):
                     unit_actions[u_idx] = ["WATER"]
-                    occupied_destinations.add(u_pos)
+                    u_tile["watered_today"] = True
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
+                    continue
+                if u_tile.get("fertilized_until_day", -1) < day and u_inv.get("FERTILIZER", 0) > 0:
+                    unit_actions[u_idx] = ["FERTILIZE"]
+                    u_inv["FERTILIZER"] -= 1
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
                     continue
             elif k == "WEED":
                 unit_actions[u_idx] = ["DIG"]
-                occupied_destinations.add(u_pos)
+                reserved_destinations.add(u_pos)
+                unmoved_units.discard(u_idx)
                 continue
 
     tasks: List[Tuple[Tuple[int, int], float, str, Optional[str]]] = []
@@ -665,11 +731,13 @@ def solve_micro_actions(
                 an = t.get("animal")
                 if k in ["COOP", "PASTURE"] and an:
                     if not t.get("fed_today", False):
-                        tasks.append((pos, 25.0, "FEED", None))
+                        tasks.append((pos, 30.0, "FEED", None))
                     elif not t.get("cared_today", False):
                         tasks.append((pos, 18.0, "CARE", None))
                     elif t.get("yield_units", 0) > 0:
-                        tasks.append((pos, 20.0, "HARVEST_ANIMAL", None))
+                        tasks.append((pos, 25.0, "HARVEST_ANIMAL", None))
+                    elif t.get("fertilizer_available", False):
+                        tasks.append((pos, 12.0, "FERT_ANIMAL", None))
                 elif k == "PLANT":
                     crop = t.get("crop", "CARROT")
                     cspec = CROP_SPECS.get(crop, CROP_SPECS["CARROT"])
@@ -678,22 +746,35 @@ def solve_micro_actions(
                     if (not cspec["ongoing"] and (age >= cspec["max_yield_day"] or (day >= 28 and yield_u > 0))) or (
                         cspec["ongoing"] and age >= cspec["first_yield_day"] and yield_u > 0
                     ):
-                        tasks.append((pos, 22.0, "HARVEST_CROP", None))
+                        urg = 35.0 if day >= 28 else 25.0
+                        tasks.append((pos, urg, "HARVEST_CROP", None))
                     elif not t.get("watered_today", False):
-                        tasks.append((pos, 16.0, "WATER_CROP", None))
+                        tasks.append((pos, 22.0, "WATER_CROP", None))
                 elif k == "WEED":
-                    tasks.append((pos, 8.0, "DIG_WEED", None))
+                    tasks.append((pos, 10.0, "DIG_WEED", None))
             elif t is None and pos not in SHED_TILES and day < 27:
-                best_crop = "CARROT"
-                priority_bonus = 5.0
+                best_crop = None
+                best_logit = 0.0
                 if crop_heatmaps is not None:
                     c_logits = crop_heatmaps[:, r, c]
-                    best_crop_idx = int(np.argmax(c_logits))
-                    best_crop = CROPS[best_crop_idx]
-                    priority_bonus += float(c_logits[best_crop_idx])
-                tasks.append((pos, priority_bonus, "PLANT_TILE", best_crop))
+                    sorted_indices = np.argsort(-c_logits)
+                    for idx in sorted_indices:
+                        candidate = CROPS[idx]
+                        if available_seeds.get(candidate, 0) > 0:
+                            best_crop = candidate
+                            best_logit = float(c_logits[idx])
+                            break
+                if best_crop is None:
+                    for crop in CROPS:
+                        if available_seeds.get(crop, 0) > 0:
+                            best_crop = crop
+                            break
 
-    unassigned_unit_indices = [i for i, act in enumerate(unit_actions) if act is None]
+                if best_crop is not None and available_seeds.get(best_crop, 0) > 0:
+                    priority = 5.0 + lambda_logit * best_logit
+                    tasks.append((pos, priority, "PLANT_TILE", best_crop))
+
+    unassigned_unit_indices = [i for i in range(num_units) if unit_actions[i] is None]
     if unassigned_unit_indices and tasks:
         num_free = len(unassigned_unit_indices)
         num_tasks = len(tasks)
@@ -709,12 +790,23 @@ def solve_micro_actions(
         for i_idx, j_idx in zip(row_ind, col_ind):
             u_idx = unassigned_unit_indices[i_idx]
             u_pos = units[u_idx]
-            t_pos, _, task_type, best_crop = tasks[j_idx]
+            t_pos, _, task_type, payload = tasks[j_idx]
+            unmoved_positions = {units[v] for v in unmoved_units if v != u_idx}
+
             if u_pos == t_pos:
-                if task_type == "PLANT_TILE" and best_crop:
-                    unit_actions[u_idx] = ["PLANT", best_crop]
+                if task_type == "PLANT_TILE" and payload:
+                    if available_seeds.get(payload, 0) > 0:
+                        unit_actions[u_idx] = ["PLANT", payload]
+                        available_seeds[payload] -= 1
+                    else:
+                        unit_actions[u_idx] = ["PASS"]
                 elif task_type == "FEED":
-                    unit_actions[u_idx] = ["FEED"]
+                    u_inv = inventories[u_idx] if u_idx < len(inventories) else {}
+                    if u_inv.get("WHEAT", 0) > 0:
+                        unit_actions[u_idx] = ["FEED"]
+                        u_inv["WHEAT"] -= 1
+                    else:
+                        unit_actions[u_idx] = ["PASS"]
                 elif task_type == "CARE":
                     unit_actions[u_idx] = ["CARE"]
                 elif task_type in ["HARVEST_ANIMAL", "HARVEST_CROP"]:
@@ -723,26 +815,37 @@ def solve_micro_actions(
                     unit_actions[u_idx] = ["DIG"]
                 else:
                     unit_actions[u_idx] = ["PASS"]
-                occupied_destinations.add(u_pos)
+                reserved_destinations.add(u_pos)
+                unmoved_units.discard(u_idx)
             else:
-                direction, next_pos = get_step_towards(u_pos, t_pos, occupied_destinations)
+                direction, next_pos = get_step_towards(u_pos, t_pos, reserved_destinations, unmoved_positions)
                 unit_actions[u_idx] = [direction]
-                occupied_destinations.add(next_pos)
+                reserved_destinations.add(next_pos)
+                unmoved_units.discard(u_idx)
 
     for u_idx in range(num_units):
         if unit_actions[u_idx] is None:
             u_pos = units[u_idx]
+            unmoved_positions = {units[v] for v in unmoved_units if v != u_idx}
             if u_pos not in SHED_TILES:
                 nearest_shed = min(SHED_TILES, key=lambda s: get_manhattan_dist(u_pos, s))
-                direction, next_pos = get_step_towards(u_pos, nearest_shed, occupied_destinations)
+                direction, next_pos = get_step_towards(u_pos, nearest_shed, reserved_destinations, unmoved_positions)
                 unit_actions[u_idx] = [direction]
-                occupied_destinations.add(next_pos)
+                reserved_destinations.add(next_pos)
+                unmoved_units.discard(u_idx)
             else:
-                unit_actions[u_idx] = ["PASS"]
-                occupied_destinations.add(u_pos)
+                if u_pos not in reserved_destinations:
+                    unit_actions[u_idx] = ["PASS"]
+                    reserved_destinations.add(u_pos)
+                    unmoved_units.discard(u_idx)
+                else:
+                    direction, next_pos = get_step_towards(u_pos, (4, 4), reserved_destinations, unmoved_positions)
+                    unit_actions[u_idx] = [direction]
+                    reserved_destinations.add(next_pos)
+                    unmoved_units.discard(u_idx)
 
-    farmer_action = unit_actions[0] if unit_actions else ["PASS"]
-    hands_actions = unit_actions[1:] if len(unit_actions) > 1 else []
+    farmer_action = unit_actions[0] if unit_actions and unit_actions[0] is not None else ["PASS"]
+    hands_actions = [act if act is not None else ["PASS"] for act in unit_actions[1:]] if len(unit_actions) > 1 else []
     return farmer_action, hands_actions
 
 

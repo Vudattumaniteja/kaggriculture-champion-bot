@@ -33,7 +33,8 @@ def value_to_two_hot(values: torch.Tensor, num_bins: int = NUM_BINS, v_min: floa
     Transforms scalar dollar cash targets into two-hot categorical distributions over symlog bins.
     """
     device = values.device
-    s_vals = symlog(values).clamp(v_min, v_max)
+    flat_values = values.reshape(-1)
+    s_vals = symlog(flat_values).clamp(v_min, v_max)
     bin_width = (v_max - v_min) / (num_bins - 1)
     
     # Normalized position [0, num_bins - 1]
@@ -44,11 +45,13 @@ def value_to_two_hot(values: torch.Tensor, num_bins: int = NUM_BINS, v_min: floa
     weight_high = norm_pos - low_idx.float()
     weight_low = 1.0 - weight_high
     
-    two_hot = torch.zeros(values.shape[0], num_bins, device=device)
+    two_hot = torch.zeros(flat_values.shape[0], num_bins, device=device, dtype=torch.float32)
     two_hot.scatter_add_(1, low_idx.unsqueeze(1), weight_low.unsqueeze(1))
     two_hot.scatter_add_(1, high_idx.unsqueeze(1), weight_high.unsqueeze(1))
     
-    return two_hot
+    if values.dim() > 1 and values.shape[-1] != 1:
+        return two_hot.view(*values.shape, num_bins)
+    return two_hot.view(values.shape[0], num_bins)
 
 
 def two_hot_to_value(probs: torch.Tensor, num_bins: int = NUM_BINS, v_min: float = V_MIN, v_max: float = V_MAX) -> torch.Tensor:
@@ -199,6 +202,17 @@ class ChampionCritic(nn.Module):
         value_logits = self.value_head(z_global)
         win_logit = self.win_head(z_global)
         return value_logits, win_logit
+
+    def predict_value(self, z_global: torch.Tensor) -> torch.Tensor:
+        """Predicts expected scalar dollar cash value."""
+        value_logits, _ = self.forward(z_global)
+        probs = F.softmax(value_logits, dim=-1)
+        return two_hot_to_value(probs)
+
+    def predict_win_prob(self, z_global: torch.Tensor) -> torch.Tensor:
+        """Predicts win probability in [0, 1]."""
+        _, win_logit = self.forward(z_global)
+        return torch.sigmoid(win_logit)
 
 
 class ChampionPolicyNetwork(nn.Module):

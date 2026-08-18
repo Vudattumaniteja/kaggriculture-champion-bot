@@ -458,14 +458,41 @@ class ChampionPolicyNetwork(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, z_spatial: torch.Tensor, z_global: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        z_spatial: torch.Tensor,
+        z_global: torch.Tensor,
+        crop_mask: Optional[torch.Tensor] = None,
+        workforce_mask: Optional[torch.Tensor] = None,
+        land_mask: Optional[torch.Tensor] = None,
+        seed_mask: Optional[torch.Tensor] = None,
+        market_mask: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        crop_logits = self.crop_head(z_spatial)
+        livestock_quotas = self.livestock_head(z_global)
+        workforce_logits = self.workforce_head(z_global)
+        land_logit = self.land_head(z_global)
+        seed_logits = self.seed_head(z_global)
+        market_fractions = self.market_head(z_global)
+
+        if crop_mask is not None:
+            crop_logits = torch.where(crop_mask > 0.5, crop_logits, torch.full_like(crop_logits, -1e9))
+        if workforce_mask is not None:
+            workforce_logits = torch.where(workforce_mask > 0.5, workforce_logits, torch.full_like(workforce_logits, -1e9))
+        if land_mask is not None:
+            land_logit = torch.where(land_mask > 0.5, land_logit, torch.full_like(land_logit, -1e9))
+        if seed_mask is not None:
+            seed_logits = torch.where(seed_mask > 0.5, seed_logits, torch.full_like(seed_logits, -1e9))
+        if market_mask is not None:
+            market_fractions = market_fractions * market_mask.to(market_fractions.device)
+
         return {
-            "crop_heatmaps": self.crop_head(z_spatial),
-            "livestock_quotas": self.livestock_head(z_global),
-            "workforce_logits": self.workforce_head(z_global),
-            "land_expand_logit": self.land_head(z_global),
-            "seed_replenish_logits": self.seed_head(z_global),
-            "market_fractions": self.market_head(z_global),
+            "crop_heatmaps": crop_logits,
+            "livestock_quotas": livestock_quotas,
+            "workforce_logits": workforce_logits,
+            "land_expand_logit": land_logit,
+            "seed_replenish_logits": seed_logits,
+            "market_fractions": market_fractions,
         }
 
 
@@ -476,10 +503,27 @@ class ChampionFullNetwork(nn.Module):
         self.critic = ChampionCritic()
         self.policy = ChampionPolicyNetwork()
 
-    def forward(self, x_spatial: torch.Tensor, x_scalar: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        x_spatial: torch.Tensor,
+        x_scalar: torch.Tensor,
+        crop_mask: Optional[torch.Tensor] = None,
+        workforce_mask: Optional[torch.Tensor] = None,
+        land_mask: Optional[torch.Tensor] = None,
+        seed_mask: Optional[torch.Tensor] = None,
+        market_mask: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
         z_spatial, z_global = self.backbone(x_spatial, x_scalar)
         val_logits, win_logit = self.critic(z_global)
-        policy_outputs = self.policy(z_spatial, z_global)
+        policy_outputs = self.policy(
+            z_spatial,
+            z_global,
+            crop_mask=crop_mask,
+            workforce_mask=workforce_mask,
+            land_mask=land_mask,
+            seed_mask=seed_mask,
+            market_mask=market_mask,
+        )
         return {
             **policy_outputs,
             "value_logits": val_logits,

@@ -1,5 +1,6 @@
 """
 FiLM-Modulated SE-ResNet Neural Backbone, Decoupled Multi-Head Policy & 1001-Bin Symlog Critic.
+Includes Pre-Softmax Analytical Action Masking for all Factorized Decision Spaces.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
@@ -11,6 +12,27 @@ import torch.nn.functional as F
 NUM_BINS = 1001
 V_MIN = -15.0
 V_MAX = 15.0
+
+CROPS: List[str] = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON"]
+PRODUCTS: List[str] = ["WHEAT", "CARROT", "TOMATO", "STRAWBERRY", "MELON", "EGG", "MILK", "WOOL", "FERTILIZER"]
+ANIMALS: List[str] = ["GOOSE", "COW", "SHEEP"]
+
+SEED_COSTS: Dict[str, float] = {
+    "WHEAT": 10.0,
+    "CARROT": 20.0,
+    "TOMATO": 50.0,
+    "STRAWBERRY": 100.0,
+    "MELON": 80.0,
+}
+
+QUADRANT_COSTS: Dict[str, float] = {
+    "NE": 1000.0,
+    "SW": 2000.0,
+    "SE": 4000.0,
+}
+
+SHED_TILES: List[Tuple[int, int]] = [(4, 4), (5, 4), (4, 5), (5, 5)]
+MAX_SEED_BUFFER: int = 20
 
 
 def symlog(x: torch.Tensor) -> torch.Tensor:
@@ -37,7 +59,6 @@ def value_to_two_hot(values: torch.Tensor, num_bins: int = NUM_BINS, v_min: floa
     s_vals = symlog(flat_values).clamp(v_min, v_max)
     bin_width = (v_max - v_min) / (num_bins - 1)
     
-    # Normalized position [0, num_bins - 1]
     norm_pos = (s_vals - v_min) / bin_width
     low_idx = torch.floor(norm_pos).long().clamp(0, num_bins - 2)
     high_idx = (low_idx + 1).clamp(0, num_bins - 1)
@@ -218,7 +239,13 @@ class ChampionCritic(nn.Module):
 class ChampionPolicyNetwork(nn.Module):
     """
     Decoupled Multi-Head Policy Actor.
-    Emits factorized operational action targets.
+    Emits factorized operational action targets:
+    1. Spatial crop heatmaps (5 x 10 x 10) conditioned on owned quadrants
+    2. Livestock target quotas (3 dims: GOOSE, COW, SHEEP)
+    3. Workforce recruitment logits (13 dims: 0..12 farmhands)
+    4. Land acquisition logit (1 dim: unlock quadrant)
+    5. Autonomous seed replenishment logits (5 dims: WHEAT..MELON)
+    6. Continuous market liquidation fractions (9 dims in [0, 1])
     """
     def __init__(self, spatial_channels: int = 64, global_dim: int = 256):
         super().__init__()
@@ -265,14 +292,41 @@ class ChampionPolicyNetwork(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, z_spatial: torch.Tensor, z_global: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        z_spatial: torch.Tensor,
+        z_global: torch.Tensor,
+        crop_mask: Optional[torch.Tensor] = None,
+        workforce_mask: Optional[torch.Tensor] = None,
+        land_mask: Optional[torch.Tensor] = None,
+        seed_mask: Optional[torch.Tensor] = None,
+        market_mask: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        crop_logits = self.crop_head(z_spatial)
+        livestock_quotas = self.livestock_head(z_global)
+        workforce_logits = self.workforce_head(z_global)
+        land_logit = self.land_head(z_global)
+        seed_logits = self.seed_head(z_global)
+        market_fractions = self.market_head(z_global)
+
+        if crop_mask is not None:
+            crop_logits = apply_action_masks(crop_logits, crop_mask)
+        if workforce_mask is not None:
+            workforce_logits = apply_action_masks(workforce_logits, workforce_mask)
+        if land_mask is not None:
+            land_logit = apply_action_masks(land_logit, land_mask)
+        if seed_mask is not None:
+            seed_logits = apply_action_masks(seed_logits, seed_mask)
+        if market_mask is not None:
+            market_fractions = market_fractions * market_mask.to(market_fractions.device)
+
         return {
-            "crop_heatmaps": self.crop_head(z_spatial),
-            "livestock_quotas": self.livestock_head(z_global),
-            "workforce_logits": self.workforce_head(z_global),
-            "land_expand_logit": self.land_head(z_global),
-            "seed_replenish_logits": self.seed_head(z_global),
-            "market_fractions": self.market_head(z_global),
+            "crop_heatmaps": crop_logits,
+            "livestock_quotas": livestock_quotas,
+            "workforce_logits": workforce_logits,
+            "land_expand_logit": land_logit,
+            "seed_replenish_logits": seed_logits,
+            "market_fractions": market_fractions,
         }
 
 
@@ -286,10 +340,27 @@ class ChampionFullNetwork(nn.Module):
         self.critic = ChampionCritic()
         self.policy = ChampionPolicyNetwork()
 
-    def forward(self, x_spatial: torch.Tensor, x_scalar: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,
+        x_spatial: torch.Tensor,
+        x_scalar: torch.Tensor,
+        crop_mask: Optional[torch.Tensor] = None,
+        workforce_mask: Optional[torch.Tensor] = None,
+        land_mask: Optional[torch.Tensor] = None,
+        seed_mask: Optional[torch.Tensor] = None,
+        market_mask: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
         z_spatial, z_global = self.backbone(x_spatial, x_scalar)
         val_logits, win_logit = self.critic(z_global)
-        policy_outputs = self.policy(z_spatial, z_global)
+        policy_outputs = self.policy(
+            z_spatial,
+            z_global,
+            crop_mask=crop_mask,
+            workforce_mask=workforce_mask,
+            land_mask=land_mask,
+            seed_mask=seed_mask,
+            market_mask=market_mask,
+        )
         
         return {
             **policy_outputs,
@@ -303,40 +374,114 @@ class ChampionFullNetwork(nn.Module):
 def apply_action_masks(logits: torch.Tensor, masks: torch.Tensor, mask_value: float = -1e9) -> torch.Tensor:
     """
     Applies analytical boolean/binary action masks to logits prior to softmax.
-    Valid positions (mask == 1) remain untouched; invalid positions (mask == 0) are set to mask_value.
+    Valid positions (mask > 0.5) remain untouched; invalid positions (mask <= 0.5) are set to mask_value.
     """
-    masks = masks.to(logits.device)
+    if isinstance(masks, (int, float, bool)):
+        masks = torch.tensor(masks, device=logits.device, dtype=torch.float32)
+    else:
+        masks = masks.to(logits.device)
     return torch.where(masks > 0.5, logits, torch.full_like(logits, mask_value))
 
 
-def build_action_masks(money: float, unlocked_quads: List[str], num_workers: int, shed: Dict[str, int]) -> Dict[str, Any]:
+def compute_masked_probabilities(logits: torch.Tensor, mask: torch.Tensor, dim: int = -1, mask_value: float = -1e9) -> torch.Tensor:
     """
-    Computes analytical pre-softmax action masks for workforce hiring and land acquisition.
+    Applies analytical pre-softmax action masks and computes normalized probability distribution.
+    Guarantees that masked actions receive strictly 0.0 probability mass.
     """
+    masked_logits = apply_action_masks(logits, mask, mask_value=mask_value)
+    probs = F.softmax(masked_logits, dim=dim)
+    # Ensure numerical precision clamping for masked values
+    if isinstance(mask, (int, float, bool)):
+        mask = torch.tensor(mask, device=logits.device, dtype=torch.float32)
+    else:
+        mask = mask.to(logits.device)
+    return torch.where(mask > 0.5, probs, torch.zeros_like(probs))
+
+
+def sample_masked_categorical(logits: torch.Tensor, mask: torch.Tensor, mask_value: float = -1e9) -> torch.Tensor:
+    """
+    Samples action index from masked categorical distribution.
+    """
+    probs = compute_masked_probabilities(logits, mask, dim=-1, mask_value=mask_value)
+    return torch.multinomial(probs, num_samples=1).squeeze(-1)
+
+
+def build_action_masks(
+    money: float,
+    unlocked_quads: List[str],
+    num_workers: int,
+    shed: Optional[Dict[str, int]] = None,
+    seeds: Optional[Dict[str, int]] = None,
+    max_seed_buffer: int = MAX_SEED_BUFFER,
+) -> Dict[str, Any]:
+    """
+    Computes comprehensive analytical pre-softmax action masks for all factorized policy heads:
+    1. Spatial Crop Mask (1, 5, 10, 10): 1.0 for owned quadrant tiles (excluding shed), 0.0 elsewhere.
+    2. Workforce Hiring Mask (1, 13): 1.0 if k >= num_workers and k * 20 <= money (or k == num_workers fallback).
+    3. Land Expansion Mask (1, 1) / float: 1.0 if money >= next_quadrant_cost, 0.0 otherwise.
+    4. Autonomous Seed Replenishment Mask (1, 5): 1.0 if money >= seed_cost and seed_inv < max_buffer, 0.0 otherwise.
+    5. Market Liquidation Mask (1, 9): 1.0 if commodity quantity in shed > 0, 0.0 otherwise.
+    """
+    shed = dict(shed or {})
+    seeds = dict(seeds or {})
     unlocked_set = set(unlocked_quads)
 
-    # 1. Workforce Hiring Mask: hiring k total workers requires (k * 20) daily wage reserve
-    workforce_mask = torch.zeros(13, dtype=torch.float32)
-    for k in range(13):
-        # Current workers cannot be fired; additional hires cost wages
-        if k >= num_workers and (k * 20.0 <= money or k == num_workers):
-            workforce_mask[k] = 1.0
-        elif k == num_workers:
-            workforce_mask[k] = 1.0
+    # 1. Spatial Crop Mask (5 crops x 10 rows x 10 cols)
+    crop_mask = torch.zeros(1, 5, 10, 10, dtype=torch.float32)
+    for r in range(10):
+        for c in range(10):
+            quad = "NW" if r < 5 and c < 5 else ("NE" if r < 5 and c >= 5 else ("SW" if r >= 5 and c < 5 else "SE"))
+            is_shed = (r, c) in SHED_TILES
+            if quad in unlocked_set and not is_shed:
+                crop_mask[0, :, r, c] = 1.0
 
-    # 2. Land Expansion Mask
-    # Next quadrant cost: NE=$1000, SW=$2000, SE=$4000
+    # 2. Workforce Hiring Mask (13 discrete logits: 0..12)
+    workforce_mask = torch.zeros(1, 13, dtype=torch.float32)
+    has_valid_hire = False
+    for k in range(13):
+        # Cannot fire existing workers; additional hires require wage reserve
+        if k >= num_workers and (k * 20.0 <= money or k == num_workers):
+            workforce_mask[0, k] = 1.0
+            has_valid_hire = True
+        elif k == num_workers:
+            workforce_mask[0, k] = 1.0
+            has_valid_hire = True
+
+    if not has_valid_hire and 0 <= num_workers < 13:
+        workforce_mask[0, num_workers] = 1.0
+
+    # 3. Land Expansion Mask
     next_quad_cost = None
     if "NE" not in unlocked_set:
-        next_quad_cost = 1000.0
+        next_quad_cost = QUADRANT_COSTS["NE"]
     elif "SW" not in unlocked_set:
-        next_quad_cost = 2000.0
+        next_quad_cost = QUADRANT_COSTS["SW"]
     elif "SE" not in unlocked_set:
-        next_quad_cost = 4000.0
+        next_quad_cost = QUADRANT_COSTS["SE"]
 
-    land_expand_mask = 1.0 if (next_quad_cost is not None and money >= next_quad_cost) else 0.0
+    land_expand_val = 1.0 if (next_quad_cost is not None and money >= next_quad_cost) else 0.0
+    land_expand_mask = torch.tensor([[land_expand_val]], dtype=torch.float32)
+
+    # 4. Autonomous Seed Replenishment Mask (5 crops)
+    seed_mask = torch.zeros(1, 5, dtype=torch.float32)
+    total_shed_items = sum(shed.values())
+    for i, crop in enumerate(CROPS):
+        cost = SEED_COSTS.get(crop, 20.0)
+        cur_seeds = seeds.get(crop, 0)
+        if money >= cost and cur_seeds < max_seed_buffer and total_shed_items < 100:
+            seed_mask[0, i] = 1.0
+
+    # 5. Market Liquidation Mask (9 commodities)
+    market_mask = torch.zeros(1, 9, dtype=torch.float32)
+    for i, prod in enumerate(PRODUCTS):
+        if shed.get(prod, 0) > 0:
+            market_mask[0, i] = 1.0
 
     return {
-        "workforce_mask": workforce_mask.unsqueeze(0),
-        "land_expand_mask": land_expand_mask,
+        "crop_spatial_mask": crop_mask,
+        "workforce_mask": workforce_mask,
+        "land_expand_mask": land_expand_val,
+        "land_mask_tensor": land_expand_mask,
+        "seed_replenish_mask": seed_mask,
+        "market_mask": market_mask,
     }

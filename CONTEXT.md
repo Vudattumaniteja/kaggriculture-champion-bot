@@ -94,3 +94,36 @@ _Avoid_: Greedy worker dispatcher, naive nearest-neighbor picker.
 A dedicated neural policy head outputting discrete purchasing volume for each seed variety, constrained by cash availability and current seed buffer targets.
 _Avoid_: Heuristic seed buyer, hardcoded seed loop.
 
+**Advantage-Weighted Imitation Learning (AWIL)**:
+A sample-weighting formulation for expert replay imitation that scales individual transition loss by normalized, clipped advantage $\hat{A}_t = R_t - V(s_t)$, learning from high-quality decisions while downweighting blunders regardless of final game score.
+_Avoid_: Uniform behavioral cloning, scalar score-only weighting.
+
+**Two-Scale Hierarchical World Model**:
+A dual-frequency recurrent dynamics engine containing within-day micro transitions ($g_{\text{micro}}: z_t \to z_{t+1}$) for unit-level simulation and macro day-skip transitions ($g_{\text{day}}: z_{d,23} \to z_{d+1,0}$) supervised by auxiliary next-day yield and price decoders for long-horizon seasonal MCTS.
+_Avoid_: Monolithic 1-step unroller, flat 720-step simulator.
+
+**Spatial Feature Channel Mapping**:
+A representation strategy that embeds geometric and economic invariants (quadrant unlock costs, shed distance fields, town shop vectors, and unlock states) directly as $10 \times 10$ spatial feature channels, enabling equivariant D4 spatial data augmentation with synchronized action coordinate transforms.
+_Avoid_: Static coordinate hardcoding, decoupled scalar quadrant labels.
+
+**Two-Group Staged Loss Balancing**:
+A multi-task optimization architecture that dynamically balances policy action head gradients via GradNorm while locking distributional value ($\lambda_{\text{val}} = 1.0$) and auxiliary foresight decoders ($\lambda_{\text{aux}} = 0.1$) to fixed manual coefficients to prevent task collapse.
+_Avoid_: Homoscedastic uncertainty weighting across all heads, unweighted sum loss.
+
+**Maturity-Aware Potential-Based Reward Shaping (PBRS)**:
+A state potential formulation $\Phi(s, t) = \text{Cash}_t + \sum \omega_k(t) V_k(s_t)$ that dynamically decays planted crops, livestock, unplanted seeds, and shed inventory as the episode horizon approaches Turn 719, guaranteeing mathematical policy invariance while penalizing trapped deadweight.
+_Avoid_: Arbitrary heuristic bonus, step reward shaping without potential telescoping.
+
+**Prioritized Fictitious Self-Play (PFSP) Matchmaker**:
+A dynamic multi-agent tournament selector that tracks participant Elo ratings and samples sparring opponents inversely proportional to champion win rate ($P(i) \propto \max(0.05, (1 - \text{WinRate}_i)^{1.5})$), over-indexing on hard adversaries while preserving generalist resilience.
+_Avoid_: Uniform self-play mirror, round-robin scheduler.
+
+**Heuristic Fast-Forward Warmup**:
+A sub-trajectory generation mechanism that fast-forwards early turns ($0 \to t_{\text{start}}$) in $<150\text{ms}$ using randomized pairings of heuristic specialists to inject organic midgame ($t \in [288, 432]$) and endgame ($t \in [528, 648]$) states for dense neural liquidation credit assignment.
+_Avoid_: Offline state serialization hacking, static midgame snapshot injection.
+
+**Mask-Safe Dirichlet Exploration**:
+An MCTS root exploration technique that perturbs action priors with Dirichlet noise strictly over analytical pre-softmax action masks, preventing exploration probability mass from leaking into illegal or bankrupting actions.
+_Avoid_: Unmasked Dirichlet noise, post-perturbation clipping.
+
+

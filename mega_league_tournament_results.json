@@ -1,0 +1,1441 @@
+{
+  "timestamp": "2026-08-18 23:39:07",
+  "total_runtime_seconds": 269.8,
+  "total_personalities": 30,
+  "baseline_validation": {
+    "MelonRusher": {
+      "mean_cash": 18280.0,
+      "starter_cash": 3613.0,
+      "margin": 14667.0,
+      "mean_chores": 384.0,
+      "mean_plantings": 42.0,
+      "mean_harvests": 25.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "TomatoMonopolist": {
+      "mean_cash": 7436.0,
+      "starter_cash": 3794.0,
+      "margin": 3642.0,
+      "mean_chores": 431.0,
+      "mean_plantings": 52.0,
+      "mean_harvests": 80.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "StrawberryAristocrat": {
+      "mean_cash": 12375.0,
+      "starter_cash": 3583.0,
+      "margin": 8792.0,
+      "mean_chores": 475.0,
+      "mean_plantings": 49.0,
+      "mean_harvests": 79.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "CarrotSprinter": {
+      "mean_cash": 6920.0,
+      "starter_cash": 3462.0,
+      "margin": 3458.0,
+      "mean_chores": 1014.0,
+      "mean_plantings": 224.0,
+      "mean_harvests": 133.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "WheatIndustrialist": {
+      "mean_cash": 5751.0,
+      "starter_cash": 3425.0,
+      "margin": 2326.0,
+      "mean_chores": 1145.0,
+      "mean_plantings": 217.0,
+      "mean_harvests": 145.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "PortfolioHedger": {
+      "mean_cash": 9809.0,
+      "starter_cash": 3547.0,
+      "margin": 6262.0,
+      "mean_chores": 208.0,
+      "mean_plantings": 39.0,
+      "mean_harvests": 18.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "DairyBaron": {
+      "mean_cash": 4798.0,
+      "starter_cash": 3473.0,
+      "margin": 1325.0,
+      "mean_chores": 344.0,
+      "mean_plantings": 56.0,
+      "mean_harvests": 56.0,
+      "mean_hires": 58.0,
+      "has_error": false
+    },
+    "GooseEggSwarm": {
+      "mean_cash": 15538.0,
+      "starter_cash": 3572.0,
+      "margin": 11966.0,
+      "mean_chores": 574.0,
+      "mean_plantings": 30.0,
+      "mean_harvests": 230.0,
+      "mean_hires": 54.0,
+      "has_error": false
+    },
+    "WoolSpecialist": {
+      "mean_cash": 3952.0,
+      "starter_cash": 3593.0,
+      "margin": 359.0,
+      "mean_chores": 259.0,
+      "mean_plantings": 42.0,
+      "mean_harvests": 42.0,
+      "mean_hires": 58.0,
+      "has_error": false
+    },
+    "OrganicFertilizerTycoon": {
+      "mean_cash": 29847.0,
+      "starter_cash": 3597.0,
+      "margin": 26250.0,
+      "mean_chores": 604.0,
+      "mean_plantings": 41.0,
+      "mean_harvests": 171.0,
+      "mean_hires": 51.0,
+      "has_error": false
+    },
+    "PizzaShopSniper": {
+      "mean_cash": 23276.0,
+      "starter_cash": 3395.0,
+      "margin": 19881.0,
+      "mean_chores": 882.0,
+      "mean_plantings": 138.0,
+      "mean_harvests": 128.0,
+      "mean_hires": 53.0,
+      "has_error": false
+    },
+    "BakeryMonopolist": {
+      "mean_cash": 23276.0,
+      "starter_cash": 3395.0,
+      "margin": 19881.0,
+      "mean_chores": 882.0,
+      "mean_plantings": 138.0,
+      "mean_harvests": 128.0,
+      "mean_hires": 53.0,
+      "has_error": false
+    },
+    "SmoothieExploiter": {
+      "mean_cash": 23276.0,
+      "starter_cash": 3395.0,
+      "margin": 19881.0,
+      "mean_chores": 882.0,
+      "mean_plantings": 138.0,
+      "mean_harvests": 128.0,
+      "mean_hires": 53.0,
+      "has_error": false
+    },
+    "MarketPriceCrasher": {
+      "mean_cash": 2842.0,
+      "starter_cash": 3596.0,
+      "margin": -754.0,
+      "mean_chores": 830.0,
+      "mean_plantings": 150.0,
+      "mean_harvests": 70.0,
+      "mean_hires": 32.0,
+      "has_error": false
+    },
+    "CommoditySpeculator": {
+      "mean_cash": 8465.0,
+      "starter_cash": 3548.0,
+      "margin": 4917.0,
+      "mean_chores": 187.0,
+      "mean_plantings": 37.0,
+      "mean_harvests": 13.0,
+      "mean_hires": 53.0,
+      "has_error": false
+    },
+    "BrunchSpotCorner": {
+      "mean_cash": 23276.0,
+      "starter_cash": 3395.0,
+      "margin": 19881.0,
+      "mean_chores": 882.0,
+      "mean_plantings": 138.0,
+      "mean_harvests": 128.0,
+      "mean_hires": 53.0,
+      "has_error": false
+    },
+    "IceCreamTycoon": {
+      "mean_cash": 23276.0,
+      "starter_cash": 3395.0,
+      "margin": 19881.0,
+      "mean_chores": 882.0,
+      "mean_plantings": 138.0,
+      "mean_harvests": 128.0,
+      "mean_hires": 53.0,
+      "has_error": false
+    },
+    "PetCafeSupplier": {
+      "mean_cash": 3379.0,
+      "starter_cash": 3235.0,
+      "margin": 144.0,
+      "mean_chores": 1197.0,
+      "mean_plantings": 273.0,
+      "mean_harvests": 186.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "FarmersMarketDominator": {
+      "mean_cash": 9809.0,
+      "starter_cash": 3547.0,
+      "margin": 6262.0,
+      "mean_chores": 208.0,
+      "mean_plantings": 39.0,
+      "mean_harvests": 18.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "FourQuadrantOverlord": {
+      "mean_cash": 1614.0,
+      "starter_cash": 3243.0,
+      "margin": -1629.0,
+      "mean_chores": 995.0,
+      "mean_plantings": 224.0,
+      "mean_harvests": 141.0,
+      "mean_hires": 43.0,
+      "has_error": false
+    },
+    "NWMinimalist": {
+      "mean_cash": 6169.0,
+      "starter_cash": 3330.0,
+      "margin": 2839.0,
+      "mean_chores": 781.0,
+      "mean_plantings": 169.0,
+      "mean_harvests": 122.0,
+      "mean_hires": 28.0,
+      "has_error": false
+    },
+    "FiveWorkerSwarm": {
+      "mean_cash": 4887.0,
+      "starter_cash": 3216.0,
+      "margin": 1671.0,
+      "mean_chores": 1183.0,
+      "mean_plantings": 259.0,
+      "mean_harvests": 199.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "LeanSoloOperator": {
+      "mean_cash": 6305.0,
+      "starter_cash": 3412.0,
+      "margin": 2893.0,
+      "mean_chores": 431.0,
+      "mean_plantings": 90.0,
+      "mean_harvests": 77.0,
+      "mean_hires": 0.0,
+      "has_error": false
+    },
+    "SerpentineChorer": {
+      "mean_cash": 6273.0,
+      "starter_cash": 3252.0,
+      "margin": 3021.0,
+      "mean_chores": 1127.0,
+      "mean_plantings": 259.0,
+      "mean_harvests": 202.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "AntiCompetitorShadow": {
+      "mean_cash": 14328.0,
+      "starter_cash": 3471.0,
+      "margin": 10857.0,
+      "mean_chores": 1033.0,
+      "mean_plantings": 212.0,
+      "mean_harvests": 109.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "GreedySnowballer": {
+      "mean_cash": 878.0,
+      "starter_cash": 3212.0,
+      "margin": -2334.0,
+      "mean_chores": 947.0,
+      "mean_plantings": 221.0,
+      "mean_harvests": 124.0,
+      "mean_hires": 39.0,
+      "has_error": false
+    },
+    "SafePreserver": {
+      "mean_cash": 7395.0,
+      "starter_cash": 3422.0,
+      "margin": 3973.0,
+      "mean_chores": 661.0,
+      "mean_plantings": 144.0,
+      "mean_harvests": 123.0,
+      "mean_hires": 28.0,
+      "has_error": false
+    },
+    "StochasticPerturbation": {
+      "mean_cash": 7684.0,
+      "starter_cash": 3487.0,
+      "margin": 4197.0,
+      "mean_chores": 756.0,
+      "mean_plantings": 147.0,
+      "mean_harvests": 97.0,
+      "mean_hires": 41.0,
+      "has_error": false
+    },
+    "KaggleStarter": {
+      "mean_cash": 3379.0,
+      "starter_cash": 3235.0,
+      "margin": 144.0,
+      "mean_chores": 1197.0,
+      "mean_plantings": 273.0,
+      "mean_harvests": 186.0,
+      "mean_hires": 56.0,
+      "has_error": false
+    },
+    "PastMuZeroChampion": {
+      "mean_cash": 8455.0,
+      "starter_cash": 3492.0,
+      "margin": 4963.0,
+      "mean_chores": 641.0,
+      "mean_plantings": 122.0,
+      "mean_harvests": 87.0,
+      "mean_hires": 28.0,
+      "has_error": false
+    }
+  },
+  "marquee_matches": [
+    {
+      "matchup": "MelonRusher vs CarrotSprinter",
+      "narrative": "Melon 12-day capital rusher vs Rapid 3-day Carrot cycling",
+      "seed": 42,
+      "winner": "MelonRusher",
+      "avg_cash0": 16483.5,
+      "avg_cash1": 6002.5,
+      "margin": 10481.0,
+      "final_prices": {
+        "WHEAT": 43,
+        "CARROT": 45,
+        "TOMATO": 91,
+        "STRAWBERRY": 297,
+        "MELON": 228,
+        "EGG": 58,
+        "MILK": 306,
+        "WOOL": 250,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "MelonRusher vs CarrotSprinter",
+      "narrative": "Melon 12-day capital rusher vs Rapid 3-day Carrot cycling",
+      "seed": 100,
+      "winner": "MelonRusher",
+      "avg_cash0": 16053.0,
+      "avg_cash1": 8320.5,
+      "margin": 7732.5,
+      "final_prices": {
+        "WHEAT": 50,
+        "CARROT": 39,
+        "TOMATO": 81,
+        "STRAWBERRY": 290,
+        "MELON": 232,
+        "EGG": 102,
+        "MILK": 262,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "MelonRusher vs TomatoMonopolist",
+      "narrative": "High-margin Melon capex vs Multi-harvest Tomato annuity",
+      "seed": 42,
+      "winner": "MelonRusher",
+      "avg_cash0": 18486.5,
+      "avg_cash1": 6369.0,
+      "margin": 12117.5,
+      "final_prices": {
+        "WHEAT": 42,
+        "CARROT": 79,
+        "TOMATO": 48,
+        "STRAWBERRY": 252,
+        "MELON": 228,
+        "EGG": 68,
+        "MILK": 248,
+        "WOOL": 251,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "MelonRusher vs TomatoMonopolist",
+      "narrative": "High-margin Melon capex vs Multi-harvest Tomato annuity",
+      "seed": 100,
+      "winner": "MelonRusher",
+      "avg_cash0": 16922.0,
+      "avg_cash1": 5738.5,
+      "margin": 11183.5,
+      "final_prices": {
+        "WHEAT": 49,
+        "CARROT": 52,
+        "TOMATO": 127,
+        "STRAWBERRY": 236,
+        "MELON": 232,
+        "EGG": 62,
+        "MILK": 354,
+        "WOOL": 240,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "StrawberryAristocrat vs WheatIndustrialist",
+      "narrative": "Luxury $120 crop vs Bulk low-margin volume Wheat",
+      "seed": 42,
+      "winner": "StrawberryAristocrat",
+      "avg_cash0": 11306.5,
+      "avg_cash1": 9548.0,
+      "margin": 1758.5,
+      "final_prices": {
+        "WHEAT": 36,
+        "CARROT": 56,
+        "TOMATO": 165,
+        "STRAWBERRY": 270,
+        "MELON": 280,
+        "EGG": 64,
+        "MILK": 291,
+        "WOOL": 250,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "StrawberryAristocrat vs WheatIndustrialist",
+      "narrative": "Luxury $120 crop vs Bulk low-margin volume Wheat",
+      "seed": 100,
+      "winner": "StrawberryAristocrat",
+      "avg_cash0": 12416.5,
+      "avg_cash1": 9434.0,
+      "margin": 2982.5,
+      "final_prices": {
+        "WHEAT": 35,
+        "CARROT": 75,
+        "TOMATO": 68,
+        "STRAWBERRY": 290,
+        "MELON": 280,
+        "EGG": 59,
+        "MILK": 328,
+        "WOOL": 244,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "PortfolioHedger vs CarrotSprinter",
+      "narrative": "Risk-parity crop basket vs Pure single-crop carrot cycling",
+      "seed": 42,
+      "winner": "PortfolioHedger",
+      "avg_cash0": 9405.5,
+      "avg_cash1": 5497.0,
+      "margin": 3908.5,
+      "final_prices": {
+        "WHEAT": 46,
+        "CARROT": 38,
+        "TOMATO": 100,
+        "STRAWBERRY": 327,
+        "MELON": 250,
+        "EGG": 63,
+        "MILK": 286,
+        "WOOL": 250,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "PortfolioHedger vs CarrotSprinter",
+      "narrative": "Risk-parity crop basket vs Pure single-crop carrot cycling",
+      "seed": 100,
+      "winner": "PortfolioHedger",
+      "avg_cash0": 9788.0,
+      "avg_cash1": 8320.0,
+      "margin": 1468.0,
+      "final_prices": {
+        "WHEAT": 51,
+        "CARROT": 40,
+        "TOMATO": 81,
+        "STRAWBERRY": 278,
+        "MELON": 250,
+        "EGG": 111,
+        "MILK": 240,
+        "WOOL": 240,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "DairyBaron vs MelonRusher",
+      "narrative": "Daily $160 milk cow rusher vs 12-day Melon engine",
+      "seed": 42,
+      "winner": "MelonRusher",
+      "avg_cash0": 6208.0,
+      "avg_cash1": 15146.5,
+      "margin": -8938.5,
+      "final_prices": {
+        "WHEAT": 45,
+        "CARROT": 122,
+        "TOMATO": 216,
+        "STRAWBERRY": 265,
+        "MELON": 247,
+        "EGG": 60,
+        "MILK": 319,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "DairyBaron vs MelonRusher",
+      "narrative": "Daily $160 milk cow rusher vs 12-day Melon engine",
+      "seed": 100,
+      "winner": "MelonRusher",
+      "avg_cash0": 5067.5,
+      "avg_cash1": 13358.5,
+      "margin": -8291.0,
+      "final_prices": {
+        "WHEAT": 37,
+        "CARROT": 46,
+        "TOMATO": 74,
+        "STRAWBERRY": 265,
+        "MELON": 249,
+        "EGG": 63,
+        "MILK": 332,
+        "WOOL": 251,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "GooseEggSwarm vs CarrotSprinter",
+      "narrative": "Daily $50 Goose egg swarm vs 3-day Carrot sprinter",
+      "seed": 42,
+      "winner": "GooseEggSwarm",
+      "avg_cash0": 15434.5,
+      "avg_cash1": 8334.5,
+      "margin": 7100.0,
+      "final_prices": {
+        "WHEAT": 46,
+        "CARROT": 54,
+        "TOMATO": 399,
+        "STRAWBERRY": 333,
+        "MELON": 280,
+        "EGG": 41,
+        "MILK": 291,
+        "WOOL": 248,
+        "FERTILIZER": 87
+      }
+    },
+    {
+      "matchup": "GooseEggSwarm vs CarrotSprinter",
+      "narrative": "Daily $50 Goose egg swarm vs 3-day Carrot sprinter",
+      "seed": 100,
+      "winner": "GooseEggSwarm",
+      "avg_cash0": 15569.5,
+      "avg_cash1": 8982.0,
+      "margin": 6587.5,
+      "final_prices": {
+        "WHEAT": 45,
+        "CARROT": 43,
+        "TOMATO": 83,
+        "STRAWBERRY": 261,
+        "MELON": 280,
+        "EGG": 51,
+        "MILK": 255,
+        "WOOL": 253,
+        "FERTILIZER": 87
+      }
+    },
+    {
+      "matchup": "WoolSpecialist vs WheatIndustrialist",
+      "narrative": "High-value $200 Wool sheep pasture vs Bulk Wheat",
+      "seed": 42,
+      "winner": "WheatIndustrialist",
+      "avg_cash0": 2102.5,
+      "avg_cash1": 6156.5,
+      "margin": -4054.0,
+      "final_prices": {
+        "WHEAT": 21,
+        "CARROT": 114,
+        "TOMATO": 77,
+        "STRAWBERRY": 256,
+        "MELON": 280,
+        "EGG": 64,
+        "MILK": 319,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "WoolSpecialist vs WheatIndustrialist",
+      "narrative": "High-value $200 Wool sheep pasture vs Bulk Wheat",
+      "seed": 100,
+      "winner": "WheatIndustrialist",
+      "avg_cash0": 2097.5,
+      "avg_cash1": 5674.0,
+      "margin": -3576.5,
+      "final_prices": {
+        "WHEAT": 21,
+        "CARROT": 66,
+        "TOMATO": 74,
+        "STRAWBERRY": 311,
+        "MELON": 280,
+        "EGG": 62,
+        "MILK": 339,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "OrganicFertilizerTycoon vs DairyBaron",
+      "narrative": "Integrated Fertilizer livestock vs Pure Dairy rusher",
+      "seed": 42,
+      "winner": "OrganicFertilizerTycoon",
+      "avg_cash0": 34345.5,
+      "avg_cash1": 5122.0,
+      "margin": 29223.5,
+      "final_prices": {
+        "WHEAT": 38,
+        "CARROT": 54,
+        "TOMATO": 64,
+        "STRAWBERRY": 297,
+        "MELON": 280,
+        "EGG": 59,
+        "MILK": 321,
+        "WOOL": 245,
+        "FERTILIZER": 87
+      }
+    },
+    {
+      "matchup": "OrganicFertilizerTycoon vs DairyBaron",
+      "narrative": "Integrated Fertilizer livestock vs Pure Dairy rusher",
+      "seed": 100,
+      "winner": "OrganicFertilizerTycoon",
+      "avg_cash0": 32788.0,
+      "avg_cash1": 6291.0,
+      "margin": 26497.0,
+      "final_prices": {
+        "WHEAT": 48,
+        "CARROT": 42,
+        "TOMATO": 79,
+        "STRAWBERRY": 307,
+        "MELON": 280,
+        "EGG": 84,
+        "MILK": 289,
+        "WOOL": 214,
+        "FERTILIZER": 86
+      }
+    },
+    {
+      "matchup": "MarketPriceCrasher vs MelonRusher",
+      "narrative": "Early commodity price dumper vs Capital-intensive Melon rusher",
+      "seed": 42,
+      "winner": "MelonRusher",
+      "avg_cash0": 7128.0,
+      "avg_cash1": 15021.0,
+      "margin": -7893.0,
+      "final_prices": {
+        "WHEAT": 47,
+        "CARROT": 48,
+        "TOMATO": 252,
+        "STRAWBERRY": 284,
+        "MELON": 245,
+        "EGG": 56,
+        "MILK": 347,
+        "WOOL": 248,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "MarketPriceCrasher vs MelonRusher",
+      "narrative": "Early commodity price dumper vs Capital-intensive Melon rusher",
+      "seed": 100,
+      "winner": "MelonRusher",
+      "avg_cash0": 8016.5,
+      "avg_cash1": 14124.0,
+      "margin": -6107.5,
+      "final_prices": {
+        "WHEAT": 45,
+        "CARROT": 71,
+        "TOMATO": 240,
+        "STRAWBERRY": 266,
+        "MELON": 249,
+        "EGG": 52,
+        "MILK": 332,
+        "WOOL": 247,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "CommoditySpeculator vs MarketPriceCrasher",
+      "narrative": "Price-sensitive hoarder/swing trader vs Aggressive dumper",
+      "seed": 42,
+      "winner": "MarketPriceCrasher",
+      "avg_cash0": 8905.5,
+      "avg_cash1": 8933.0,
+      "margin": -27.5,
+      "final_prices": {
+        "WHEAT": 48,
+        "CARROT": 69,
+        "TOMATO": 546,
+        "STRAWBERRY": 310,
+        "MELON": 250,
+        "EGG": 52,
+        "MILK": 347,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "CommoditySpeculator vs MarketPriceCrasher",
+      "narrative": "Price-sensitive hoarder/swing trader vs Aggressive dumper",
+      "seed": 100,
+      "winner": "CommoditySpeculator",
+      "avg_cash0": 8652.5,
+      "avg_cash1": 5661.0,
+      "margin": 2991.5,
+      "final_prices": {
+        "WHEAT": 46,
+        "CARROT": 65,
+        "TOMATO": 208,
+        "STRAWBERRY": 300,
+        "MELON": 250,
+        "EGG": 59,
+        "MILK": 339,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "PizzaShopSniper vs BakeryMonopolist",
+      "narrative": "Pizza 3x town multiplier sniper vs Bakery wheat/egg monopolist",
+      "seed": 42,
+      "winner": "TIE",
+      "avg_cash0": 17091.0,
+      "avg_cash1": 17091.0,
+      "margin": 0.0,
+      "final_prices": {
+        "WHEAT": 43,
+        "CARROT": 61,
+        "TOMATO": 317,
+        "STRAWBERRY": 265,
+        "MELON": 241,
+        "EGG": 48,
+        "MILK": 332,
+        "WOOL": 246,
+        "FERTILIZER": 97
+      }
+    },
+    {
+      "matchup": "PizzaShopSniper vs BakeryMonopolist",
+      "narrative": "Pizza 3x town multiplier sniper vs Bakery wheat/egg monopolist",
+      "seed": 100,
+      "winner": "TIE",
+      "avg_cash0": 24826.0,
+      "avg_cash1": 24826.0,
+      "margin": 0.0,
+      "final_prices": {
+        "WHEAT": 45,
+        "CARROT": 62,
+        "TOMATO": 83,
+        "STRAWBERRY": 311,
+        "MELON": 223,
+        "EGG": 45,
+        "MILK": 332,
+        "WOOL": 240,
+        "FERTILIZER": 94
+      }
+    },
+    {
+      "matchup": "SmoothieExploiter vs DairyBaron",
+      "narrative": "Smoothie strawberry/milk sniper vs Dedicated Dairy baron",
+      "seed": 42,
+      "winner": "SmoothieExploiter",
+      "avg_cash0": 10420.0,
+      "avg_cash1": 5720.0,
+      "margin": 4700.0,
+      "final_prices": {
+        "WHEAT": 44,
+        "CARROT": 54,
+        "TOMATO": 111,
+        "STRAWBERRY": 337,
+        "MELON": 272,
+        "EGG": 66,
+        "MILK": 315,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "SmoothieExploiter vs DairyBaron",
+      "narrative": "Smoothie strawberry/milk sniper vs Dedicated Dairy baron",
+      "seed": 100,
+      "winner": "SmoothieExploiter",
+      "avg_cash0": 23482.5,
+      "avg_cash1": 5212.5,
+      "margin": 18270.0,
+      "final_prices": {
+        "WHEAT": 31,
+        "CARROT": 66,
+        "TOMATO": 64,
+        "STRAWBERRY": 261,
+        "MELON": 250,
+        "EGG": 52,
+        "MILK": 306,
+        "WOOL": 252,
+        "FERTILIZER": 94
+      }
+    },
+    {
+      "matchup": "FourQuadrantOverlord vs NWMinimalist",
+      "narrative": "Aggressive 4-quadrant 100-tile expansion vs $0 land spend",
+      "seed": 42,
+      "winner": "NWMinimalist",
+      "avg_cash0": 746.5,
+      "avg_cash1": 4318.0,
+      "margin": -3571.5,
+      "final_prices": {
+        "WHEAT": 51,
+        "CARROT": 15,
+        "TOMATO": 81,
+        "STRAWBERRY": 293,
+        "MELON": 280,
+        "EGG": 95,
+        "MILK": 255,
+        "WOOL": 249,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "FourQuadrantOverlord vs NWMinimalist",
+      "narrative": "Aggressive 4-quadrant 100-tile expansion vs $0 land spend",
+      "seed": 100,
+      "winner": "NWMinimalist",
+      "avg_cash0": 1778.0,
+      "avg_cash1": 5398.5,
+      "margin": -3620.5,
+      "final_prices": {
+        "WHEAT": 46,
+        "CARROT": 30,
+        "TOMATO": 64,
+        "STRAWBERRY": 290,
+        "MELON": 280,
+        "EGG": 64,
+        "MILK": 336,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "FiveWorkerSwarm vs LeanSoloOperator",
+      "narrative": "Max 5 daily farmhands swarm vs Zero-labor overhead solo farmer",
+      "seed": 42,
+      "winner": "LeanSoloOperator",
+      "avg_cash0": 3677.0,
+      "avg_cash1": 4113.0,
+      "margin": -436.0,
+      "final_prices": {
+        "WHEAT": 49,
+        "CARROT": 18,
+        "TOMATO": 70,
+        "STRAWBERRY": 314,
+        "MELON": 280,
+        "EGG": 95,
+        "MILK": 306,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "FiveWorkerSwarm vs LeanSoloOperator",
+      "narrative": "Max 5 daily farmhands swarm vs Zero-labor overhead solo farmer",
+      "seed": 100,
+      "winner": "LeanSoloOperator",
+      "avg_cash0": 4364.5,
+      "avg_cash1": 4444.0,
+      "margin": -79.5,
+      "final_prices": {
+        "WHEAT": 51,
+        "CARROT": 17,
+        "TOMATO": 100,
+        "STRAWBERRY": 336,
+        "MELON": 280,
+        "EGG": 65,
+        "MILK": 291,
+        "WOOL": 250,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "SerpentineChorer vs CarrotSprinter",
+      "narrative": "Boustrophedon spatial pathfinder vs Standard distance priority",
+      "seed": 42,
+      "winner": "SerpentineChorer",
+      "avg_cash0": 4796.0,
+      "avg_cash1": 3172.5,
+      "margin": 1623.5,
+      "final_prices": {
+        "WHEAT": 51,
+        "CARROT": 18,
+        "TOMATO": 189,
+        "STRAWBERRY": 333,
+        "MELON": 280,
+        "EGG": 75,
+        "MILK": 231,
+        "WOOL": 242,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "SerpentineChorer vs CarrotSprinter",
+      "narrative": "Boustrophedon spatial pathfinder vs Standard distance priority",
+      "seed": 100,
+      "winner": "SerpentineChorer",
+      "avg_cash0": 4230.0,
+      "avg_cash1": 3110.5,
+      "margin": 1119.5,
+      "final_prices": {
+        "WHEAT": 51,
+        "CARROT": 18,
+        "TOMATO": 126,
+        "STRAWBERRY": 290,
+        "MELON": 280,
+        "EGG": 67,
+        "MILK": 311,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "AntiCompetitorShadow vs MelonRusher",
+      "narrative": "Dynamic opponent crop mirroring/counter vs Melon rusher",
+      "seed": 42,
+      "winner": "AntiCompetitorShadow",
+      "avg_cash0": 22164.0,
+      "avg_cash1": 7054.5,
+      "margin": 15109.5,
+      "final_prices": {
+        "WHEAT": 48,
+        "CARROT": 42,
+        "TOMATO": 126,
+        "STRAWBERRY": 297,
+        "MELON": 4,
+        "EGG": 66,
+        "MILK": 319,
+        "WOOL": 250,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "AntiCompetitorShadow vs MelonRusher",
+      "narrative": "Dynamic opponent crop mirroring/counter vs Melon rusher",
+      "seed": 100,
+      "winner": "AntiCompetitorShadow",
+      "avg_cash0": 22535.5,
+      "avg_cash1": 7012.5,
+      "margin": 15523.0,
+      "final_prices": {
+        "WHEAT": 52,
+        "CARROT": 45,
+        "TOMATO": 111,
+        "STRAWBERRY": 304,
+        "MELON": 4,
+        "EGG": 72,
+        "MILK": 328,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "AntiCompetitorShadow vs CarrotSprinter",
+      "narrative": "Opponent mirror shadow vs Carrot sprinter",
+      "seed": 42,
+      "winner": "AntiCompetitorShadow",
+      "avg_cash0": 11153.0,
+      "avg_cash1": 6193.0,
+      "margin": 4960.0,
+      "final_prices": {
+        "WHEAT": 50,
+        "CARROT": 36,
+        "TOMATO": 216,
+        "STRAWBERRY": 286,
+        "MELON": 250,
+        "EGG": 62,
+        "MILK": 319,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "AntiCompetitorShadow vs CarrotSprinter",
+      "narrative": "Opponent mirror shadow vs Carrot sprinter",
+      "seed": 100,
+      "winner": "AntiCompetitorShadow",
+      "avg_cash0": 6495.5,
+      "avg_cash1": 3715.5,
+      "margin": 2780.0,
+      "final_prices": {
+        "WHEAT": 44,
+        "CARROT": 13,
+        "TOMATO": 91,
+        "STRAWBERRY": 297,
+        "MELON": 272,
+        "EGG": 60,
+        "MILK": 324,
+        "WOOL": 252,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "GreedySnowballer vs SafePreserver",
+      "narrative": "100% reinvestment geometric snowballer vs $1,000 cash buffer",
+      "seed": 42,
+      "winner": "SafePreserver",
+      "avg_cash0": 473.0,
+      "avg_cash1": 4183.0,
+      "margin": -3710.0,
+      "final_prices": {
+        "WHEAT": 46,
+        "CARROT": 14,
+        "TOMATO": 70,
+        "STRAWBERRY": 330,
+        "MELON": 280,
+        "EGG": 58,
+        "MILK": 386,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "GreedySnowballer vs SafePreserver",
+      "narrative": "100% reinvestment geometric snowballer vs $1,000 cash buffer",
+      "seed": 100,
+      "winner": "SafePreserver",
+      "avg_cash0": 1401.0,
+      "avg_cash1": 4091.0,
+      "margin": -2690.0,
+      "final_prices": {
+        "WHEAT": 43,
+        "CARROT": 15,
+        "TOMATO": 79,
+        "STRAWBERRY": 307,
+        "MELON": 280,
+        "EGG": 63,
+        "MILK": 350,
+        "WOOL": 246,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "StochasticPerturbation vs PortfolioHedger",
+      "narrative": "Noisy perturbed hybrid expert vs Balanced portfolio",
+      "seed": 42,
+      "winner": "PortfolioHedger",
+      "avg_cash0": 7390.0,
+      "avg_cash1": 9785.5,
+      "margin": -2395.5,
+      "final_prices": {
+        "WHEAT": 50,
+        "CARROT": 61,
+        "TOMATO": 144,
+        "STRAWBERRY": 295,
+        "MELON": 250,
+        "EGG": 58,
+        "MILK": 352,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "StochasticPerturbation vs PortfolioHedger",
+      "narrative": "Noisy perturbed hybrid expert vs Balanced portfolio",
+      "seed": 100,
+      "winner": "PortfolioHedger",
+      "avg_cash0": 7664.5,
+      "avg_cash1": 9995.5,
+      "margin": -2331.0,
+      "final_prices": {
+        "WHEAT": 42,
+        "CARROT": 88,
+        "TOMATO": 74,
+        "STRAWBERRY": 302,
+        "MELON": 249,
+        "EGG": 55,
+        "MILK": 328,
+        "WOOL": 240,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "PastMuZeroChampion vs MelonRusher",
+      "narrative": "Neural SSL/MCTS hybrid executor vs Melon rusher",
+      "seed": 42,
+      "winner": "MelonRusher",
+      "avg_cash0": 12210.5,
+      "avg_cash1": 15967.0,
+      "margin": -3756.5,
+      "final_prices": {
+        "WHEAT": 47,
+        "CARROT": 126,
+        "TOMATO": 100,
+        "STRAWBERRY": 319,
+        "MELON": 238,
+        "EGG": 58,
+        "MILK": 296,
+        "WOOL": 229,
+        "FERTILIZER": 100
+      }
+    },
+    {
+      "matchup": "PastMuZeroChampion vs MelonRusher",
+      "narrative": "Neural SSL/MCTS hybrid executor vs Melon rusher",
+      "seed": 100,
+      "winner": "MelonRusher",
+      "avg_cash0": 8599.0,
+      "avg_cash1": 10466.0,
+      "margin": -1867.0,
+      "final_prices": {
+        "WHEAT": 41,
+        "CARROT": 24,
+        "TOMATO": 74,
+        "STRAWBERRY": 290,
+        "MELON": 267,
+        "EGG": 52,
+        "MILK": 355,
+        "WOOL": 255,
+        "FERTILIZER": 100
+      }
+    }
+  ],
+  "leaderboard": [
+    {
+      "name": "AntiCompetitorShadow",
+      "role": "sparring",
+      "elo": 1601.0,
+      "matches": 8,
+      "wins": 8,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 15587.0
+    },
+    {
+      "name": "PortfolioHedger",
+      "role": "sparring",
+      "elo": 1595.7,
+      "matches": 8,
+      "wins": 8,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 9743.6
+    },
+    {
+      "name": "MelonRusher",
+      "role": "sparring",
+      "elo": 1585.4,
+      "matches": 24,
+      "wins": 18,
+      "losses": 6,
+      "ties": 0,
+      "win_rate": 75.0,
+      "mean_cash": 13841.2
+    },
+    {
+      "name": "StrawberryAristocrat",
+      "role": "sparring",
+      "elo": 1555.8,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 11861.5
+    },
+    {
+      "name": "NWMinimalist",
+      "role": "sparring",
+      "elo": 1555.8,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 4858.2
+    },
+    {
+      "name": "LeanSoloOperator",
+      "role": "sparring",
+      "elo": 1555.8,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 4278.5
+    },
+    {
+      "name": "SafePreserver",
+      "role": "sparring",
+      "elo": 1555.8,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 4137.0
+    },
+    {
+      "name": "OrganicFertilizerTycoon",
+      "role": "sparring",
+      "elo": 1549.6,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 33566.8
+    },
+    {
+      "name": "SmoothieExploiter",
+      "role": "sparring",
+      "elo": 1542.2,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 16951.2
+    },
+    {
+      "name": "GooseEggSwarm",
+      "role": "sparring",
+      "elo": 1540.3,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 15502.0
+    },
+    {
+      "name": "SerpentineChorer",
+      "role": "sparring",
+      "elo": 1534.9,
+      "matches": 4,
+      "wins": 4,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 100.0,
+      "mean_cash": 4513.0
+    },
+    {
+      "name": "CommoditySpeculator",
+      "role": "sparring",
+      "elo": 1530.9,
+      "matches": 4,
+      "wins": 3,
+      "losses": 1,
+      "ties": 0,
+      "win_rate": 75.0,
+      "mean_cash": 8779.0
+    },
+    {
+      "name": "WheatIndustrialist",
+      "role": "sparring",
+      "elo": 1508.8,
+      "matches": 8,
+      "wins": 4,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 50.0,
+      "mean_cash": 7703.1
+    },
+    {
+      "name": "BakeryMonopolist",
+      "role": "sparring",
+      "elo": 1501.2,
+      "matches": 4,
+      "wins": 1,
+      "losses": 1,
+      "ties": 2,
+      "win_rate": 25.0,
+      "mean_cash": 20958.5
+    },
+    {
+      "name": "BrunchSpotCorner",
+      "role": "sparring",
+      "elo": 1500.0,
+      "matches": 0,
+      "wins": 0,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 0.0
+    },
+    {
+      "name": "IceCreamTycoon",
+      "role": "sparring",
+      "elo": 1500.0,
+      "matches": 0,
+      "wins": 0,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 0.0
+    },
+    {
+      "name": "PetCafeSupplier",
+      "role": "sparring",
+      "elo": 1500.0,
+      "matches": 0,
+      "wins": 0,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 0.0
+    },
+    {
+      "name": "FarmersMarketDominator",
+      "role": "sparring",
+      "elo": 1500.0,
+      "matches": 0,
+      "wins": 0,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 0.0
+    },
+    {
+      "name": "KaggleStarter",
+      "role": "sparring",
+      "elo": 1500.0,
+      "matches": 0,
+      "wins": 0,
+      "losses": 0,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 0.0
+    },
+    {
+      "name": "PizzaShopSniper",
+      "role": "sparring",
+      "elo": 1498.8,
+      "matches": 4,
+      "wins": 1,
+      "losses": 1,
+      "ties": 2,
+      "win_rate": 25.0,
+      "mean_cash": 20958.5
+    },
+    {
+      "name": "PastMuZeroChampion",
+      "role": "sparring",
+      "elo": 1484.2,
+      "matches": 4,
+      "wins": 1,
+      "losses": 3,
+      "ties": 0,
+      "win_rate": 25.0,
+      "mean_cash": 10404.8
+    },
+    {
+      "name": "MarketPriceCrasher",
+      "role": "sparring",
+      "elo": 1463.9,
+      "matches": 8,
+      "wins": 2,
+      "losses": 6,
+      "ties": 0,
+      "win_rate": 25.0,
+      "mean_cash": 7434.6
+    },
+    {
+      "name": "TomatoMonopolist",
+      "role": "sparring",
+      "elo": 1452.8,
+      "matches": 4,
+      "wins": 0,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 6053.8
+    },
+    {
+      "name": "StochasticPerturbation",
+      "role": "sparring",
+      "elo": 1451.5,
+      "matches": 4,
+      "wins": 0,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 7527.2
+    },
+    {
+      "name": "FourQuadrantOverlord",
+      "role": "sparring",
+      "elo": 1444.2,
+      "matches": 4,
+      "wins": 0,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 1262.2
+    },
+    {
+      "name": "FiveWorkerSwarm",
+      "role": "sparring",
+      "elo": 1444.2,
+      "matches": 4,
+      "wins": 0,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 4020.8
+    },
+    {
+      "name": "GreedySnowballer",
+      "role": "sparring",
+      "elo": 1444.2,
+      "matches": 4,
+      "wins": 0,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 937.0
+    },
+    {
+      "name": "WoolSpecialist",
+      "role": "sparring",
+      "elo": 1435.4,
+      "matches": 4,
+      "wins": 0,
+      "losses": 4,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 2100.0
+    },
+    {
+      "name": "DairyBaron",
+      "role": "sparring",
+      "elo": 1367.9,
+      "matches": 12,
+      "wins": 0,
+      "losses": 12,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 5603.5
+    },
+    {
+      "name": "CarrotSprinter",
+      "role": "sparring",
+      "elo": 1299.9,
+      "matches": 20,
+      "wins": 0,
+      "losses": 20,
+      "ties": 0,
+      "win_rate": 0.0,
+      "mean_cash": 6164.8
+    }
+  ]
+}

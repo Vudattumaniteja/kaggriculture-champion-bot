@@ -126,4 +126,9 @@ _Avoid_: Offline state serialization hacking, static midgame snapshot injection.
 An MCTS root exploration technique that perturbs action priors with Dirichlet noise strictly over analytical pre-softmax action masks, preventing exploration probability mass from leaking into illegal or bankrupting actions.
 _Avoid_: Unmasked Dirichlet noise, post-perturbation clipping.
 
+**Grilling Model Workspace**:
+The isolated module directory located at `grilling model/` (`C:\Users\Manit\Desktop\kaggle\grilling model\`) containing all source code, models, training routines (SSL/AWIL/RL), datasets, replay parsers, evaluation tests, and standalone submission artifacts for the unified championship agent.
+_Avoid_: Scattering experimental scripts across root directory.
+
+
 

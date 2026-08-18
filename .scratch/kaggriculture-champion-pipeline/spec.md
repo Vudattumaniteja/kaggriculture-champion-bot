@@ -2,10 +2,12 @@
 
 **Status**: `ready-for-agent`  
 **Domain Context**: [CONTEXT.md](file:///C:/Users/Manit/Desktop/kaggle/CONTEXT.md)  
+**Dedicated Workspace Root**: `grilling model/` (`C:\Users\Manit\Desktop\kaggle\grilling model\`)  
 **Tracked Issues**: 
 - GitHub Issue #1: [Hierarchical ML/SSL/RL Bot Architecture & I/O Pipeline](https://github.com/Vudattumaniteja/kaggriculture-champion-bot/issues/1)
 - GitHub Issue #2: [Advantage-Weighted Imitation Learning (AWIL) & Two-Scale Hierarchical World Model Pre-Training Pipeline](https://github.com/Vudattumaniteja/kaggriculture-champion-bot/issues/2)
 - GitHub Issue #3: [RL Rewards, Potential-Based Shaping (PBRS), GAE Credit Assignment & League Ecosystem](https://github.com/Vudattumaniteja/kaggriculture-champion-bot/issues/3) (Frontier 7 Resolved)
+- GitHub Master Issue #4: [Spec: Unified Champion Bot End-to-End Pipeline (Hierarchical Architecture, AWIL & RL League)](https://github.com/Vudattumaniteja/kaggriculture-champion-bot/issues/4)
 
 ---
 
@@ -32,7 +34,7 @@ Developing a Grandmaster-tier competitive agent for Kaggriculture presents four 
 
 ## Solution
 
-A unified, mathematically rigorous, high-throughput championship training and execution pipeline comprising three tightly integrated tiers:
+A unified, mathematically rigorous, high-throughput championship training and execution pipeline **strictly contained and developed within the `grilling model/` workspace**, comprising three tightly integrated tiers:
 
 1. **Hierarchical 2-Tier Architecture & I/O Pipeline (Tier 1)**:
    - **Observation Encoder**: $24 \times 10 \times 10$ spatial feature tensor capturing crop identities, growth stages, moisture, fertilizer flags, livestock pens, shed locations, farmhand densities, and static economic maps (`Quadrant_Cost_Map`, `Distance_to_Shed`, `Shop_Vectors`), coupled with a 72-dimensional scalar vector of market prices, elasticity metrics, town shop demands, debt liabilities, and opponent public profiles.
@@ -40,7 +42,7 @@ A unified, mathematically rigorous, high-throughput championship training and ex
    - **Decoupled Multi-Head Policy**: Independent factorized output heads for Spatial Crop Allocation ($5 \times 10 \times 10$), Livestock Target Herd Size (3 dims), Workforce Recruiting ($0..12$), Land Acquisition ($[0, 1]$), Autonomous Seed Replenishment (5 dims), and Continuous Market Liquidation ($9 \times [0, 1]$), safeguarded by pre-softmax analytical action masks.
    - **Critic Distributional Value & Win-Probability Heads**: 1001-bin two-hot symlog categorical distribution over $[-15.0, +15.0]$ symlog cash space ($[-\$3.26\text{M}, +\$3.26\text{M}]$) trained via cross-entropy loss alongside an auxiliary win-probability head.
    - **Two-Stage Market Guardrails & Neural-Weighted Hungarian Micro Solver**: Continuous market liquidation fractions pass through deterministic cow feed reservation floors and midnight shed overflow auto-monetization filters, while farmhand pathfinding and chore execution are solved via global linear sum assignment with biological urgency penalties.
-   - **Single-File Kaggle Deployment**: Self-contained callable `agent(obs, config=None)` with base85-compressed FP16 neural weights for single-command CLI submission.
+   - **Single-File Kaggle Deployment**: Self-contained callable `agent(obs, config=None)` with base85-compressed FP16 neural weights built at `grilling model/submission.py` for single-command CLI submission.
 
 2. **Advantage-Weighted Imitation Learning (AWIL) & Two-Scale Hierarchical World Model (Tier 2)**:
    - **Quality Replay Curation**: High-volume parsing of 440,000 Grandmaster transitions filtered with a $\$50\text{k}$ terminal return floor, duplicate idle PASS deduplication, dual-player trajectory ingestion, and per-player representation caps.
@@ -61,70 +63,107 @@ A unified, mathematically rigorous, high-throughput championship training and ex
 
 ## User Stories
 
+### Workspace Isolation & Project Structure
+1. As a developer, I want all models, datasets, training scripts (SSL, AWIL, RL), tests, and build artifacts strictly contained in `grilling model/`, so that the root workspace remains uncluttered and experimental iterations are isolated.
+2. As a developer, I want all test suites to execute from within `grilling model/tests/`, so that CI and validation runners target the self-contained module cleanly.
+
 ### Tier 1: State Representation, Neural Trunk & Decoupled Policy
-1. As a competitive player, I want the agent to encode the 10×10 farm grid into a 24-channel spatial tensor, so that crop growth, soil moisture, animal health, worker positions, and economic distance fields are cleanly separated.
-2. As a competitive player, I want the agent to track spot prices, baseline price ratios, and market crash indicators across all 9 commodities, so that harvested crops are never liquidated into collapsed markets.
-3. As a competitive player, I want the agent to track town shop demand across all local establishments, so that high-margin downstream purchasing opportunities are prioritized.
-4. As a competitive player, I want the agent to extract the public opponent profile (cash balance, unlocked quadrants, workforce headcount, tile development), so that the agent dynamically adapts to competitor expansion speed.
-5. As a competitive player, I want the neural network to fuse spatial and scalar economic features using FiLM conditioning, so that financial pressure directly modulates spatial visual filters.
-6. As a competitive player, I want the policy to output a decoupled $5 \times 10 \times 10$ spatial crop priority heatmap, so that planting decisions across different quadrants do not conflict with each other.
-7. As a competitive player, I want the policy to output dedicated livestock target headcounts for Cows, Sheep, and Geese, so that herd expansion is balanced against daily feed supplies.
-8. As a competitive player, I want the policy to output a dedicated workforce hiring head ($0..12$), so that farmhand recruitment scales dynamically with seasonal labor demand.
-9. As a competitive player, I want the policy to output a quadrant acquisition probability, so that land expansion occurs at financially optimal turns.
-10. As a competitive player, I want the policy to output autonomous seed replenishment targets, so that required seeds are maintained without over-purchasing.
-11. As a competitive player, I want the policy to output continuous market liquidation fractions ($[0, 1]$) per commodity, so that the agent can execute fine-grained inventory sell-offs.
-12. As a competitive player, I want a Stage 2 cow feed reservation filter, so that wheat required for daily cow sustenance is never accidentally liquidated at market.
-13. As a competitive player, I want a Stage 2 midnight shed overflow auto-liquidation guardrail, so that excess items above the 100-item shed capacity are monetized instead of trashed at day end.
-14. As a competitive player, I want pre-softmax analytical action masking on hiring and land acquisition heads, so that illegal or bankrupting moves are eliminated before policy sampling.
-15. As a competitive player, I want the Critic to output a 1001-bin distributional two-hot symlog cash distribution, so that value gradients remain stable across multi-million dollar cash scales.
-16. As a competitive player, I want the Critic to output an auxiliary win-probability head, so that head-to-head match dominance is explicitly modeled.
-17. As a competitive player, I want the Micro Assignment Engine to solve worker dispatch via Hungarian linear sum assignment, so that worker travel time is minimized with zero path collisions.
-18. As a competitive player, I want biological urgency penalties integrated into the Hungarian cost matrix, so that starving animals, dry crops, and ripe harvests are serviced before low-priority tasks.
-19. As a competitive player, I want the complete agent packaged into a single-file callable contract `agent(obs, config=None)`, so that it can be submitted directly to Kaggle and benchmarked locally.
+3. As a competitive player, I want the agent to encode the 10×10 farm grid into a 24-channel spatial tensor, so that crop growth, soil moisture, animal health, worker positions, and economic distance fields are cleanly separated.
+4. As a competitive player, I want the agent to track spot prices, baseline price ratios, and market crash indicators across all 9 commodities, so that harvested crops are never liquidated into collapsed markets.
+5. As a competitive player, I want the agent to track town shop demand across all local establishments, so that high-margin downstream purchasing opportunities are prioritized.
+6. As a competitive player, I want the agent to extract the public opponent profile (cash balance, unlocked quadrants, workforce headcount, tile development), so that the agent dynamically adapts to competitor expansion speed.
+7. As a competitive player, I want the neural network to fuse spatial and scalar economic features using FiLM conditioning, so that financial pressure directly modulates spatial visual filters.
+8. As a competitive player, I want the policy to output a decoupled $5 \times 10 \times 10$ spatial crop priority heatmap, so that planting decisions across different quadrants do not conflict with each other.
+9. As a competitive player, I want the policy to output dedicated livestock target headcounts for Cows, Sheep, and Geese, so that herd expansion is balanced against daily feed supplies.
+10. As a competitive player, I want the policy to output a dedicated workforce hiring head ($0..12$), so that farmhand recruitment scales dynamically with seasonal labor demand.
+11. As a competitive player, I want the policy to output a quadrant acquisition probability, so that land expansion occurs at financially optimal turns.
+12. As a competitive player, I want the policy to output autonomous seed replenishment targets, so that required seeds are maintained without over-purchasing.
+13. As a competitive player, I want the policy to output continuous market liquidation fractions ($[0, 1]$) per commodity, so that the agent can execute fine-grained inventory sell-offs.
+14. As a competitive player, I want a Stage 2 cow feed reservation filter, so that wheat required for daily cow sustenance is never accidentally liquidated at market.
+15. As a competitive player, I want a Stage 2 midnight shed overflow auto-liquidation guardrail, so that excess items above the 100-item shed capacity are monetized instead of trashed at day end.
+16. As a competitive player, I want pre-softmax analytical action masking on hiring and land acquisition heads, so that illegal or bankrupting moves are eliminated before policy sampling.
+17. As a competitive player, I want the Critic to output a 1001-bin distributional two-hot symlog cash distribution, so that value gradients remain stable across multi-million dollar cash scales.
+18. As a competitive player, I want the Critic to output an auxiliary win-probability head, so that head-to-head match dominance is explicitly modeled.
+19. As a competitive player, I want the Micro Assignment Engine to solve worker dispatch via Hungarian linear sum assignment, so that worker travel time is minimized with zero path collisions.
+20. As a competitive player, I want biological urgency penalties integrated into the Hungarian cost matrix, so that starving animals, dry crops, and ripe harvests are serviced before low-priority tasks.
+21. As a competitive player, I want the complete agent packaged into a single-file callable contract `agent(obs, config=None)` in `grilling model/submission.py`, so that it can be submitted directly to Kaggle and benchmarked locally.
 
 ### Tier 2: AWIL Pre-Training & Hierarchical World Modeling
-20. As a machine learning engineer, I want the replay parser to extract $5 \times 10 \times 10$ rolling crop allocation heatmaps from replay farm tiles, so that the crop head receives dense spatial supervisory gradients on every turn.
-21. As a machine learning engineer, I want the replay parser to generate an exponential lead-in ramp $y_t = \exp(-\Delta t / 12)$ for the 12 turns prior to land acquisition, so that the policy learns to anticipate capital allocation before expansion.
-22. As a machine learning engineer, I want the replay parser to compute continuous market liquidation fractions and mask empty inventory items, so that trade supervision reflects proportional inventory strategy.
-23. As a machine learning engineer, I want the dataset generator to prune matches with final score $< \$50,000$, so that low-quality random baselines do not pollute the imitation pool.
-24. As a machine learning engineer, I want the dataset generator to prune identical consecutive PASS transitions, so that zero-action idle steps do not cause policy apathy.
-25. As a machine learning engineer, I want the dataset generator to include both Player 0 and Player 1 transitions if both scored $\ge \$50,000$, so that competitive dual-player dynamics are captured.
-26. As a machine learning engineer, I want the dataset generator to cap maximum transitions contributed by any single player/match, so that the model does not overfit to one specific playstyle.
-27. As a machine learning engineer, I want to train a value baseline network $V_\phi(s)$ in Stage 1, so that state-value expectations are established before policy weighting.
-28. As a machine learning engineer, I want advantage estimates $\hat{A}_t = R_t - V_\phi(s_t)$ normalized independently within 5 seasonal phase buckets, so that early-game opening moves are not overshadowed by late-game dollar scales.
-29. As a machine learning engineer, I want transition sample weights computed via $w_t = g_i \cdot \operatorname{clip}(e^{\hat{A}_t / \tau}, 0.2, 5.0)$, so that brilliant decisions are strongly imitated while mistakes are suppressed.
-30. As a machine learning engineer, I want the observation encoder to embed quadrant unlock costs, shed distance fields, and shop direction vectors into $10 \times 10$ spatial feature channels, so that spatial filters learn invariant economic geometry.
-31. As a machine learning engineer, I want data augmentation to apply synchronized D4 rotations and reflections to the $24 \times 10 \times 10$ spatial tensor and action target coordinates $(r, c) \to (c, 9-r)$, so that effective training data volume is quadrupled without breaking spatial validity.
-32. As a machine learning engineer, I want non-spatial market orders and global economic scalars left invariant during D4 augmentation, so that commodity pricing is not corrupted.
-33. As a machine learning engineer, I want the Two-Scale Hierarchical World Model to train micro-step dynamics $g_{\text{micro}}(z_t, \mathbf{a}_{\text{strat}}) \to z_{t+1}$, so that within-day unit movements and action point expenditures are modeled in latent space.
-34. As a machine learning engineer, I want the Two-Scale Hierarchical World Model to train macro day-skip dynamics $g_{\text{day}}(z_{d, 23}, \mathbf{a}_{\text{day}}) \to z_{d+1, 0}$, so that long-horizon seasonal MCTS can plan in 3–5 macro steps.
-35. As a machine learning engineer, I want auxiliary next-morning decoders predicting crop yield grids ($\hat{Y}_{d+1}$), commodity spot prices ($\hat{P}_{d+1}$), and town shop demand ($\hat{D}_{d+1}$), so that the latent embedding $z$ is physically grounded and protected against representation collapse.
-36. As a machine learning engineer, I want policy action heads balanced dynamically using GradNorm, so that gradients from the spatial crop head do not overpower workforce hiring or land acquisition.
-37. As a machine learning engineer, I want the distributional value head and auxiliary decoders locked to fixed manual loss weights ($\lambda_{\text{val}}=1.0, \lambda_{\text{aux}}=0.1$), so that value calibration remains unconditionally stable during policy optimization.
+22. As a machine learning engineer, I want the replay parser to extract $5 \times 10 \times 10$ rolling crop allocation heatmaps from replay farm tiles, so that the crop head receives dense spatial supervisory gradients on every turn.
+23. As a machine learning engineer, I want the replay parser to generate an exponential lead-in ramp $y_t = \exp(-\Delta t / 12)$ for the 12 turns prior to land acquisition, so that the policy learns to anticipate capital allocation before expansion.
+24. As a machine learning engineer, I want the replay parser to compute continuous market liquidation fractions and mask empty inventory items, so that trade supervision reflects proportional inventory strategy.
+25. As a machine learning engineer, I want the dataset generator to prune matches with final score $< \$50,000$, so that low-quality random baselines do not pollute the imitation pool.
+26. As a machine learning engineer, I want the dataset generator to prune identical consecutive PASS transitions, so that zero-action idle steps do not cause policy apathy.
+27. As a machine learning engineer, I want the dataset generator to include both Player 0 and Player 1 transitions if both scored $\ge \$50,000$, so that competitive dual-player dynamics are captured.
+28. As a machine learning engineer, I want the dataset generator to cap maximum transitions contributed by any single player/match, so that the model does not overfit to one specific playstyle.
+29. As a machine learning engineer, I want to train a value baseline network $V_\phi(s)$ in Stage 1, so that state-value expectations are established before policy weighting.
+30. As a machine learning engineer, I want advantage estimates $\hat{A}_t = R_t - V_\phi(s_t)$ normalized independently within 5 seasonal phase buckets, so that early-game opening moves are not overshadowed by late-game dollar scales.
+31. As a machine learning engineer, I want transition sample weights computed via $w_t = g_i \cdot \operatorname{clip}(e^{\hat{A}_t / \tau}, 0.2, 5.0)$, so that brilliant decisions are strongly imitated while mistakes are suppressed.
+32. As a machine learning engineer, I want the observation encoder to embed quadrant unlock costs, shed distance fields, and shop direction vectors into $10 \times 10$ spatial feature channels, so that spatial filters learn invariant economic geometry.
+33. As a machine learning engineer, I want data augmentation to apply synchronized D4 rotations and reflections to the $24 \times 10 \times 10$ spatial tensor and action target coordinates $(r, c) \to (c, 9-r)$, so that effective training data volume is quadrupled without breaking spatial validity.
+34. As a machine learning engineer, I want non-spatial market orders and global economic scalars left invariant during D4 augmentation, so that commodity pricing is not corrupted.
+35. As a machine learning engineer, I want the Two-Scale Hierarchical World Model to train micro-step dynamics $g_{\text{micro}}(z_t, \mathbf{a}_{\text{strat}}) \to z_{t+1}$, so that within-day unit movements and action point expenditures are modeled in latent space.
+36. As a machine learning engineer, I want the Two-Scale Hierarchical World Model to train macro day-skip dynamics $g_{\text{day}}(z_{d, 23}, \mathbf{a}_{\text{day}}) \to z_{d+1, 0}$, so that long-horizon seasonal MCTS can plan in 3–5 macro steps.
+37. As a machine learning engineer, I want auxiliary next-morning decoders predicting crop yield grids ($\hat{Y}_{d+1}$), commodity spot prices ($\hat{P}_{d+1}$), and town shop demand ($\hat{D}_{d+1}$), so that the latent embedding $z$ is physically grounded and protected against representation collapse.
+38. As a machine learning engineer, I want policy action heads balanced dynamically using GradNorm, so that gradients from the spatial crop head do not overpower workforce hiring or land acquisition.
+39. As a machine learning engineer, I want the distributional value head and auxiliary decoders locked to fixed manual loss weights ($\lambda_{\text{val}}=1.0, \lambda_{\text{aux}}=0.1$), so that value calibration remains unconditionally stable during policy optimization.
 
 ### Tier 3: RL Rewards, GAE Credit Assignment & League Ecosystem
-38. As a competition bot designer, I want the agent to aggressively deploy starting capital on Days 1–15, so that the farm achieves maximal exponential compounding without artificial bank penalty cliffs.
-39. As a competition bot designer, I want unplanted seeds in inventory to have zero potential value when $(T - t) < \text{GrowTurns} + 24$, so that the agent never buys deadweight seeds on Day 28.
-40. As a competition bot designer, I want planted crops to dynamically decay in potential value if remaining turns are less than their growth duration, so that the agent transitions smoothly into fast-cycling crops near the end of the season.
-41. As a competition bot designer, I want livestock potential to decay linearly over a 10-day break-even horizon, so that pastures and coops are built exclusively during early game when positive ROI is mathematically guaranteed.
-42. As a competition bot designer, I want shed goods potential to decay to zero at $t \ge 718$, so that the agent is forced to fully liquidate inventory into cash before the match ends.
-43. As a competition bot designer, I want step-level shaped rewards to satisfy Ng et al. (1999) potential telescoping, so that intermediate rewards never alter the optimal policy relative to final net cash margin.
-44. As a competition bot designer, I want GAE temporal credit assignment ($\gamma=0.995, \lambda=0.95$), so that 4-day market price arbitrage holding cycles and 12-day Melon growth receive strong, accurate gradient signals.
-45. As a competition bot designer, I want a 500,000-transition Prioritized Experience Replay buffer, so that surprising transitions and high TD-error strategic pivots are replayed with proportional priority.
-46. As a competition bot designer, I want actor transitions to log verified causal macro actions executed by the Hungarian dispatcher, so that unexecutable target intents do not contaminate the replay buffer.
-47. As a competition bot designer, I want Prioritized Fictitious Self-Play (PFSP) matchmaking, so that the Champion bot over-samples past checkpoints and heuristic opponents that cause the highest loss rates.
-48. As a competition bot designer, I want 100% of gradient updates allocated to the single Champion network, so that compute efficiency is maximized during time-constrained training windows.
-49. As a competition bot designer, I want an 80/20 Curriculum Fast-Forward Warmup mechanism, so that the agent receives high-density exposure to Day 28 liquidation crunches from the very first hour of training.
-50. As a competition bot designer, I want heuristic warmup simulation to execute in $<150\text{ms}$ on CPU, so that curriculum matches incur near-zero overhead compared to full matches.
-51. As a competition bot designer, I want sub-trajectory GAE advantages to recurse cleanly from Turn 718 down to $t_{\text{start}}$, so that heuristic warmup turns do not pollute the neural training dataset.
-52. As a competition bot designer, I want Dirichlet exploration noise ($\alpha=0.3, \epsilon=0.25$) to be masked to valid actions, so that exploration mass is never wasted on bankrupting or illegal moves.
-53. As a competition bot designer, I want policy entropy regularization to anneal from $0.05 \to 0.002$ via a cosine schedule, so that early macro diversity transitions into sharp, deterministic tournament execution.
-54. As a competition bot designer, I want auto-checkpointing every 5–15 minutes, so that training progress is resilient to sudden interruptions and always ready for immediate packaging.
-55. As a competition bot designer, I want an automated packaging routine that compiles weights into a standalone single-file `submission.py`, so that final tournament bots can be submitted to Kaggle with a single CLI command.
+40. As a competition bot designer, I want the agent to aggressively deploy starting capital on Days 1–15, so that the farm achieves maximal exponential compounding without artificial bank penalty cliffs.
+41. As a competition bot designer, I want unplanted seeds in inventory to have zero potential value when $(T - t) < \text{GrowTurns} + 24$, so that the agent never buys deadweight seeds on Day 28.
+42. As a competition bot designer, I want planted crops to dynamically decay in potential value if remaining turns are less than their growth duration, so that the agent transitions smoothly into fast-cycling crops near the end of the season.
+43. As a competition bot designer, I want livestock potential to decay linearly over a 10-day break-even horizon, so that pastures and coops are built exclusively during early game when positive ROI is mathematically guaranteed.
+44. As a competition bot designer, I want shed goods potential to decay to zero at $t \ge 718$, so that the agent is forced to fully liquidate inventory into cash before the match ends.
+45. As a competition bot designer, I want step-level shaped rewards to satisfy Ng et al. (1999) potential telescoping, so that intermediate rewards never alter the optimal policy relative to final net cash margin.
+46. As a competition bot designer, I want GAE temporal credit assignment ($\gamma=0.995, \lambda=0.95$), so that 4-day market price arbitrage holding cycles and 12-day Melon growth receive strong, accurate gradient signals.
+47. As a competition bot designer, I want a 500,000-transition Prioritized Experience Replay buffer, so that surprising transitions and high TD-error strategic pivots are replayed with proportional priority.
+48. As a competition bot designer, I want actor transitions to log verified causal macro actions executed by the Hungarian dispatcher, so that unexecutable target intents do not contaminate the replay buffer.
+49. As a competition bot designer, I want Prioritized Fictitious Self-Play (PFSP) matchmaking, so that the Champion bot over-samples past checkpoints and heuristic opponents that cause the highest loss rates.
+50. As a competition bot designer, I want 100% of gradient updates allocated to the single Champion network, so that compute efficiency is maximized during time-constrained training windows.
+51. As a competition bot designer, I want an 80/20 Curriculum Fast-Forward Warmup mechanism, so that the agent receives high-density exposure to Day 28 liquidation crunches from the very first hour of training.
+52. As a competition bot designer, I want heuristic warmup simulation to execute in $<150\text{ms}$ on CPU, so that curriculum matches incur near-zero overhead compared to full matches.
+53. As a competition bot designer, I want sub-trajectory GAE advantages to recurse cleanly from Turn 718 down to $t_{\text{start}}$, so that heuristic warmup turns do not pollute the neural training dataset.
+54. As a competition bot designer, I want Dirichlet exploration noise ($\alpha=0.3, \epsilon=0.25$) to be masked to valid actions, so that exploration mass is never wasted on bankrupting or illegal moves.
+55. As a competition bot designer, I want policy entropy regularization to anneal from $0.05 \to 0.002$ via a cosine schedule, so that early macro diversity transitions into sharp, deterministic tournament execution.
+56. As a competition bot designer, I want auto-checkpointing every 5–15 minutes, so that training progress is resilient to sudden interruptions and always ready for immediate packaging.
+57. As a competition bot designer, I want an automated packaging routine that compiles weights into a standalone single-file `grilling model/submission.py`, so that final tournament bots can be submitted to Kaggle with a single CLI command.
 
 ---
 
 ## Implementation Decisions
+
+### Architectural Decision 0: Dedicated Workspace Root & Isolation Contract
+All modules, models, datasets, replay parsers, training pipelines (SSL, AWIL, RL), tests, and submission files must strictly live inside `grilling model/`:
+```
+grilling model/
+├── src/
+│   ├── encoder.py              # 24-channel spatial & 72-dim scalar observation encoder
+│   ├── network.py              # FiLM SE-ResNet trunk, decoupled actor heads, 1001-bin critic
+│   ├── micro_solver.py         # Guardrails (wheat reserve, shed dump) & Hungarian matcher
+│   ├── agent.py                # Standalone callable agent(obs, config=None)
+│   ├── world_model.py          # Micro & macro day-skip latent dynamics with aux decoders
+│   ├── awil_dataset.py         # Replay parser, D4 augmentation, AWIL advantage weighting
+│   ├── pbrs_gae.py             # MaturityAwarePBRS & TrajectoryGAEProcessor
+│   ├── replay_buffer.py        # 500k-transition verified causal SumTree PER buffer
+│   ├── league.py               # Single-Champion PFSP matchmaker & Elo tracker
+│   ├── curriculum.py           # 80/20 heuristic fast-forward sub-trajectory generator
+│   └── trainer.py              # Staged AWIL trainer & Overnight RL master runner
+├── tests/
+│   ├── test_encoder.py
+│   ├── test_backbone_and_critic.py
+│   ├── test_policy_heads.py
+│   ├── test_micro_assignment.py
+│   ├── test_awil_dataset.py
+│   ├── test_world_model_training.py
+│   ├── test_pbrs_gae.py
+│   ├── test_replay_buffer.py
+│   ├── test_pfsp_curriculum.py
+│   └── test_submission_packaging.py
+├── data/                       # Replays and processed HDF5/numpy tensors
+├── weights/                    # Checkpoints, best models, FP16 exported weights
+├── submission.py               # Standalone self-contained submission bot
+└── build_submission.py         # Packaging routine embedding weights into submission.py
+```
 
 ### Architectural Decision 1: Hierarchical 2-Tier I/O Contract & Feature Formulation
 The system separates strategic planning from operational execution:
@@ -201,30 +240,6 @@ The system separates strategic planning from operational execution:
 - Zero-deadweight compliance must be tested by evaluating residual unharvested crops, unplanted seeds, and unsold shed inventory at Turn 719.
 
 ### Seams to Test
-
-```
-+-----------------------------------------------------------------------------------------------+
-|                                     TESTING SEAM TOPOLOGY                                     |
-|                                                                                               |
-|  [Seam 1: Agent Environment Seam (Highest Seam)]                                              |
-|  agent(obs, config) <---> kaggle_environments.make("kaggriculture")                           |
-|                                                                                               |
-|  [Seam 2: Model & Decoupled Policy Seam]                                                      |
-|  forward(spatial, scalar, masks) -> (crop_logits, herd_logits, hire_logits, val_dist, ...)     |
-|                                                                                               |
-|  [Seam 3: Trajectory GAE & PBRS Seam]                                                         |
-|  process_match(observations, value_estimates) -> (shaped_rewards, advantages, value_targets)   |
-|                                                                                               |
-|  [Seam 4: AWIL Dataset & World Model Seam]                                                    |
-|  build_awil_dataset(...) -> dataset_stats                                                     |
-|  imagine_micro(z_t, a_strat) / imagine_day_skip(z_23, a_day) -> next_latents                   |
-|                                                                                               |
-|  [Seam 5: PFSP League & Fast-Forward Curriculum Seam]                                         |
-|  sample_opponent() -> opponent_fn                                                             |
-|  fast_forward_simulation(t_start) -> (obs_start, sub_trajectory)                              |
-+-----------------------------------------------------------------------------------------------+
-```
-
 1. **Seam 1: Agent Environment Seam (Highest / Primary Seam)**:
    - **Interface**: `agent(obs, config=None) -> Dict[str, Any]` evaluated via `kaggle_environments.make("kaggriculture")`.
    - **Validation**: Full 720-step match execution against `"starter"`, `"random"`, and `"pass"` baselines. Asserts non-negative cash balances, valid action syntax, zero worker collisions, and net worth superior to baselines.
@@ -246,9 +261,9 @@ The system separates strategic planning from operational execution:
    - **Validation**: Verifies PFSP probability weighting inversely proportional to win rate, $<150\text{ms}$ heuristic fast-forward execution, and valid sub-trajectory GAE recursion from Turn 718 down to $t_{\text{start}}$.
 
 ### Prior Art
-- `src/agents/hrl_12worker_dispatcher.py`: Hungarian assignment and path collision avoidance logic.
-- `src/training/mega_league.py`: Multi-personality tournament harness and Elo tracking.
-- `src/training/overnight_rl_pipeline.py`: Parallel rollout generation and experience replay storage.
+- `grilling model/src/micro_solver.py`: Hungarian assignment and path collision avoidance logic.
+- `grilling model/src/league.py`: Multi-personality tournament harness and Elo tracking.
+- `grilling model/src/trainer.py`: Parallel rollout generation and experience replay storage.
 
 ---
 
@@ -256,11 +271,11 @@ The system separates strategic planning from operational execution:
 
 - Multi-network concurrent optimization leagues (e.g., 3-tier AlphaStar main/exploiter networks) due to GPU compute budget limits.
 - Modifying the underlying `kaggle-environments` simulation engine rules or action point economics.
-- Online search hyperparameter grid tuning during live Kaggle evaluation steps.
+- Modifying or scattering files across directories outside `grilling model/`.
 
 ---
 
 ## Further Notes
 
 - All domain terminology strictly aligns with [CONTEXT.md](file:///C:/Users/Manit/Desktop/kaggle/CONTEXT.md).
-- Packaging pipeline automatically serializes trained FP16 weights into a standalone `submission.py` single file ready for immediate submission via `kaggle competitions submit kaggriculture -f submission.py`.
+- Standalone packaging routine compiles FP16 neural weights directly into `grilling model/submission.py` for submission via `kaggle competitions submit kaggriculture -f "grilling model/submission.py"`.

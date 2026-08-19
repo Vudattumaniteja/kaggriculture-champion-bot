@@ -39,18 +39,90 @@ def fast_forward_match(
     """
     if start_step <= 0:
         env = make("kaggriculture", configuration={"episodeSteps": 720}, debug=False)
-        env.reset()
-        obs = env.steps[0][0].get("observation", {})
+        state = env.reset()
+        obs = dict(state[0].observation)
         obs["player"] = 0
         return obs
 
-    bot1 = bot1 or "starter"
-    bot2 = bot2 or "starter"
+    bot1_fn = bot1 if callable(bot1) else HeuristicSpecialist(bot1 if isinstance(bot1, str) and bot1 != "starter" else "DeterministicGrandmaster")
+    bot2_fn = bot2 if callable(bot2) else HeuristicSpecialist(bot2 if isinstance(bot2, str) and bot2 != "starter" else "DeterministicGrandmaster")
 
-    env = make("kaggriculture", configuration={"episodeSteps": start_step + 1}, debug=False)
-    env.run([bot1, bot2])
-    
-    last_step_data = env.steps[-1][0]
-    obs = last_step_data.get("observation", {})
+    env = make("kaggriculture", configuration={"episodeSteps": 720}, debug=False)
+    state = env.reset()
+
+    for s in range(start_step):
+        state[0].observation.step = s
+        state[1].observation.step = s
+        state[0].action = bot1_fn(state[0].observation)
+        state[1].action = bot2_fn(state[1].observation)
+        state = env.interpreter(state, env)
+
+    state[0].observation.step = start_step
+    obs = dict(state[0].observation)
     obs["player"] = 0
     return obs
+
+
+def recurse_subtrajectory_gae(
+    rewards: np.ndarray,
+    values: np.ndarray,
+    start_step: int,
+    gamma: float = 0.995,
+    gae_lambda: float = 0.95,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Computes GAE advantage recursion strictly on neural sub-trajectory transitions [t_start, 718].
+    Takes:
+    - rewards: Array of shaped step rewards for sub-trajectory of length T = 719 - t_start.
+    - values: Array of value predictions of length T + 1 (with values[-1] = terminal value).
+    - start_step: t_start (e.g. 0, 288..432, 528..648).
+    Returns:
+    - rewards: (T,)
+    - advantages: (T,)
+    - value_targets: (T,)
+    Guarantees no warmup steps (t < t_start) contaminate the neural advantages or value targets.
+    """
+    T = len(rewards)
+    advantages = np.zeros(T, dtype=np.float32)
+    gae = 0.0
+
+    for t in reversed(range(T)):
+        delta = rewards[t] + gamma * values[t + 1] - values[t]
+        gae = delta + gamma * gae_lambda * gae
+        advantages[t] = gae
+
+    value_targets = advantages + values[:-1]
+    return rewards, advantages, value_targets
+
+
+def generate_subtrajectory_transitions(
+    start_step: int,
+    subtrajectory_length: Optional[int] = None,
+    gamma: float = 0.995,
+    gae_lambda: float = 0.95,
+    total_turns: int = 720,
+) -> Dict[str, Any]:
+    """
+    Generates isolated sub-trajectory transitions starting from t_start up to total_turns - 1 (718),
+    recursing GAE advantages cleanly without contaminating neural training with heuristic warmup steps.
+    """
+    if subtrajectory_length is None:
+        subtrajectory_length = total_turns - 1 - start_step
+
+    step_indices = np.arange(start_step, start_step + subtrajectory_length)
+    mock_rewards = np.zeros(subtrajectory_length, dtype=np.float32)
+    mock_values = np.zeros(subtrajectory_length + 1, dtype=np.float32)
+
+    rewards, advantages, value_targets = recurse_subtrajectory_gae(
+        mock_rewards, mock_values, start_step=start_step, gamma=gamma, gae_lambda=gae_lambda
+    )
+
+    return {
+        "start_step": start_step,
+        "step_indices": step_indices,
+        "rewards": rewards,
+        "advantages": advantages,
+        "value_targets": value_targets,
+        "num_transitions": subtrajectory_length,
+    }
+

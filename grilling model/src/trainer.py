@@ -9,7 +9,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from src.network import ChampionFullNetwork, two_hot_symlog_loss
+from src.network import (
+    ChampionFullNetwork,
+    two_hot_symlog_loss,
+    get_cosine_entropy_coeff,
+)
 from src.world_model import TwoScaleHierarchicalWorldModel
 
 
@@ -18,6 +22,7 @@ class StagedAWILTrainer:
     Two-Group Staged Trainer for AWIL Imitation and World Model Pre-training.
     - Group 1: Strategic Policy Heads (balanced dynamically via GradNorm and sample weights)
     - Group 2: Critic Value Head (locked lambda_val = 1.0) and Auxiliary Foresight Decoders (locked lambda_aux = 0.1)
+    - Policy Entropy Regularization: Cosine annealed from 0.05 -> 0.002
     """
     def __init__(
         self,
@@ -31,6 +36,9 @@ class StagedAWILTrainer:
         use_gradnorm: bool = True,
         gradnorm_alpha: float = 0.12,
         gradnorm_lr: float = 1e-3,
+        total_steps: int = 100000,
+        entropy_start: float = 0.05,
+        entropy_end: float = 0.002,
     ):
         self.device = torch.device(device)
         self.network = network.to(self.device)
@@ -40,6 +48,10 @@ class StagedAWILTrainer:
         self.use_gradnorm = use_gradnorm
         self.gradnorm_alpha = gradnorm_alpha
         self.gradnorm_lr = gradnorm_lr
+        self.total_steps = total_steps
+        self.entropy_start = entropy_start
+        self.entropy_end = entropy_end
+        self.global_step = 0
 
         # Group 1 Task weights for 5 policy heads: Crop, Workforce, Land, Seed, Market
         self.task_weights = nn.Parameter(torch.ones(5, device=self.device, dtype=torch.float32))
@@ -162,15 +174,29 @@ class StagedAWILTrainer:
                     self.task_weights.data = torch.clamp(self.task_weights.data, min=0.01)
                     self.task_weights.data = self.task_weights.data * (5.0 / self.task_weights.data.sum())
 
+            # Policy Entropy Regularization (Cosine Annealed: 0.05 -> 0.002)
+            wf_probs = F.softmax(outputs["workforce_logits"], dim=-1)
+            wf_log_probs = F.log_softmax(outputs["workforce_logits"], dim=-1)
+            policy_entropy = -(wf_probs * wf_log_probs).sum(dim=-1).mean()
+            
+            ent_coeff = get_cosine_entropy_coeff(
+                step=self.global_step,
+                total_steps=self.total_steps,
+                start_coeff=self.entropy_start,
+                end_coeff=self.entropy_end,
+            )
+            entropy_loss = -ent_coeff * policy_entropy
+
             # Aggregate losses
             policy_loss = sum(self.task_weights[i].detach() * task_losses[i] for i in range(5))
-            total_loss = policy_loss + self.lambda_val * val_loss + self.lambda_aux * aux_loss
+            total_loss = policy_loss + self.lambda_val * val_loss + self.lambda_aux * aux_loss + entropy_loss
 
             total_loss.backward()
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=5.0)
             if self.world_model is not None:
                 torch.nn.utils.clip_grad_norm_(self.world_model.parameters(), max_norm=5.0)
             self.optimizer.step()
+            self.global_step += 1
 
             total_loss_acc += total_loss.item()
             policy_loss_acc += policy_loss.item()
@@ -183,6 +209,8 @@ class StagedAWILTrainer:
             "policy_loss": policy_loss_acc / max(batches, 1),
             "value_loss": value_loss_acc / max(batches, 1),
             "aux_loss": aux_loss_acc / max(batches, 1),
+            "entropy": policy_entropy.item() if batches > 0 else 0.0,
+            "entropy_coeff": ent_coeff if batches > 0 else self.entropy_start,
         }
 
     def save_checkpoint(self, path: str):

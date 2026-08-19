@@ -7,7 +7,13 @@ import numpy as np
 import torch
 
 from src.encoder import encode_observation
-from src.network import ChampionFullNetwork, build_action_masks, apply_action_masks
+from src.network import (
+    ChampionFullNetwork,
+    build_action_masks,
+    apply_action_masks,
+    get_gumbel_temperature,
+    sample_gumbel_action,
+)
 from src.micro_solver import apply_market_guardrails, solve_micro_actions
 
 
@@ -18,6 +24,7 @@ class ChampionAgent:
     2. FiLM SE-ResNet Backbone Trunk & Decoupled Multi-Head Policy
     3. Two-Stage Market Guardrails (cow feed reservation, midnight shed overflow)
     4. Neural-Weighted Hungarian Micro Assignment Solver
+    5. Two-Stage Gumbel Evaluation Temperature (tau=1.0 for t<48, tau=0.0 for t>=48)
     """
     def __init__(self, model_weights_path: Optional[str] = None, device: str = "cpu"):
         self.device = torch.device(device)
@@ -44,7 +51,7 @@ class ChampionAgent:
         seed_replenish_logits = outputs["seed_replenish_logits"].squeeze(0).cpu().numpy()
         market_fractions = outputs["market_fractions"].squeeze(0).cpu().numpy()
 
-        # 3. Action Masks
+        # 3. Action Masks & Two-Stage Gumbel Sampling
         player = obs.get("player", 0)
         farms = obs.get("farms", [{}, {}])
         my_farm = farms[player] if player < len(farms) else {}
@@ -54,8 +61,9 @@ class ChampionAgent:
         shed = (obs.get("private", {}) or {}).get("shed", {})
 
         masks = build_action_masks(money, unlocked_quads, num_workers, shed)
-        masked_workforce_logits = apply_action_masks(workforce_logits.unsqueeze(0), masks["workforce_mask"])
-        workforce_idx = int(torch.argmax(masked_workforce_logits, dim=-1).item())
+        step = int(obs.get("step", 0))
+        tau = get_gumbel_temperature(step)
+        workforce_idx = sample_gumbel_action(workforce_logits, masks["workforce_mask"], temperature=tau)
 
         # 4. Market Guardrails
         market_orders = apply_market_guardrails(
@@ -63,7 +71,8 @@ class ChampionAgent:
             obs=obs,
             seed_replenish_logits=seed_replenish_logits,
             land_expand_logit=land_expand_logit if masks["land_expand_mask"] > 0.5 else -1e9,
-            workforce_logit_idx=workforce_idx
+            workforce_logit_idx=workforce_idx,
+            livestock_quotas=livestock_quotas,
         )
 
         # 5. Hungarian Micro Chore Assignment

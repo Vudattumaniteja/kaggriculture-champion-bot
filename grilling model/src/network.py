@@ -485,3 +485,107 @@ def build_action_masks(
         "seed_replenish_mask": seed_mask,
         "market_mask": market_mask,
     }
+
+
+def add_mask_safe_dirichlet_noise(
+    logits: torch.Tensor,
+    mask: torch.Tensor,
+    alpha: float = 0.3,
+    epsilon: float = 0.25
+) -> torch.Tensor:
+    """
+    Applies Dirichlet root exploration noise strictly over legal action masks.
+    pi_noisy(a) = (1 - eps) * pi(a) + eps * Dir(alpha) on legal support.
+    Masked actions (mask <= 0.5) receive strictly 0.0 probability.
+    """
+    if logits.dim() == 1:
+        logits = logits.unsqueeze(0)
+        squeeze_needed = True
+    else:
+        squeeze_needed = False
+
+    if isinstance(mask, (int, float, bool)):
+        mask = torch.tensor([[mask]], device=logits.device, dtype=torch.float32)
+    elif mask.dim() == 1:
+        mask = mask.unsqueeze(0).to(logits.device)
+    else:
+        mask = mask.to(logits.device)
+
+    batch_size = logits.shape[0]
+    out_probs = torch.zeros_like(logits)
+
+    for b in range(batch_size):
+        b_logits = logits[b]
+        b_mask = mask[b] if mask.shape[0] > b else mask[0]
+        valid_indices = (b_mask > 0.5).nonzero(as_tuple=True)[0]
+        
+        if len(valid_indices) == 0:
+            pass
+        elif len(valid_indices) == 1:
+            out_probs[b, valid_indices[0]] = 1.0
+        else:
+            sub_logits = b_logits[valid_indices]
+            sub_probs = F.softmax(sub_logits, dim=-1)
+            
+            dirichlet = torch.distributions.Dirichlet(torch.full_like(sub_logits, alpha))
+            noise = dirichlet.sample()
+            
+            noisy_sub_probs = (1.0 - epsilon) * sub_probs + epsilon * noise
+            noisy_sub_probs = noisy_sub_probs / noisy_sub_probs.sum()
+            out_probs[b, valid_indices] = noisy_sub_probs
+
+    if squeeze_needed:
+        return out_probs.squeeze(0)
+    return out_probs
+
+
+def get_cosine_entropy_coeff(
+    step: int,
+    total_steps: int = 100000,
+    start_coeff: float = 0.05,
+    end_coeff: float = 0.002
+) -> float:
+    """
+    Computes cosine-annealed policy entropy loss weight: 0.05 -> 0.002.
+    """
+    fraction = min(1.0, max(0.0, float(step) / max(1, total_steps)))
+    return end_coeff + 0.5 * (start_coeff - end_coeff) * (1.0 + math.cos(math.pi * fraction))
+
+
+def get_gumbel_temperature(step: int) -> float:
+    """
+    Two-stage Gumbel evaluation temperature schedule:
+    tau = 1.0 for t < 48 (first 2 days exploration)
+    tau = 0.0 for t >= 48 (greedy deterministic execution)
+    """
+    return 1.0 if step < 48 else 0.0
+
+
+def sample_gumbel_action(
+    logits: torch.Tensor,
+    mask: torch.Tensor,
+    temperature: float = 1.0,
+    mask_value: float = -1e9
+) -> int:
+    """
+    Samples discrete action with Gumbel noise and action masking.
+    If temperature <= 1e-6: returns deterministic argmax over valid actions.
+    If temperature > 0: adds Gumbel noise and returns argmax.
+    """
+    if logits.dim() > 1:
+        logits = logits.squeeze(0)
+    if mask.dim() > 1:
+        mask = mask.squeeze(0)
+
+    masked_logits = torch.where(mask.to(logits.device) > 0.5, logits, torch.full_like(logits, mask_value))
+    
+    if temperature <= 1e-6:
+        return int(torch.argmax(masked_logits).item())
+
+    # Sample Gumbel noise: -log(-log(U))
+    u = torch.rand_like(masked_logits).clamp(min=1e-7, max=1.0 - 1e-7)
+    gumbel_noise = -torch.log(-torch.log(u))
+    
+    noisy_logits = (masked_logits / temperature) + gumbel_noise
+    return int(torch.argmax(noisy_logits).item())
+

@@ -7,47 +7,35 @@ import math
 import numpy as np
 
 
+from prototype.specialists import (
+    ParameterizedHeuristicFarmer,
+    SPECIALIST_CONFIGS,
+    get_specialist,
+)
+
+
 class HeuristicSpecialist:
     """
-    Fixed Mega League heuristic specialists (Carrot Monoculture, Melon Rusher, Dairy Syndicate, etc.).
+    Fixed Mega League heuristic specialists (DeterministicGrandmaster, CarrotMonoculture, MelonRusher, DairySyndicate, TownShopSaturator).
     """
     SPECIALISTS = [
         "DeterministicGrandmaster",
         "CarrotMonoculture",
         "MelonRusher",
         "DairySyndicate",
-        "MarketPriceCrasher"
+        "TownShopSaturator",
+        "MarketPriceCrasher",
     ]
 
     def __init__(self, personality: str = "DeterministicGrandmaster"):
         self.personality = personality
+        # Map legacy / alternative names
+        target_name = "CarrotMonoculture" if personality == "MarketPriceCrasher" else personality
+        self.farmer = get_specialist(target_name)
 
     def __call__(self, obs: Dict[str, Any], config: Any = None) -> Dict[str, Any]:
-        # Minimal deterministic baseline dispatch
-        player = obs.get("player", 0)
-        farms = obs.get("farms", [{}, {}])
-        my_farm = farms[player] if player < len(farms) else {}
-        money = float(my_farm.get("money", 0.0))
-        day = int(obs.get("day", 0))
+        return self.farmer(obs, config)
 
-        market_orders = []
-        if day < 27 and money >= 80:
-            if self.personality == "MelonRusher" and day <= 5:
-                market_orders.append(["BUY_SEED", "MELON", 1])
-            elif self.personality == "CarrotMonoculture":
-                market_orders.append(["BUY_SEED", "CARROT", 2])
-            elif self.personality == "DairySyndicate":
-                market_orders.append(["BUY_SEED", "WHEAT", 2])
-            elif self.personality == "MarketPriceCrasher":
-                market_orders.append(["BUY_SEED", "CARROT", 1])
-            else:
-                market_orders.append(["BUY_SEED", "CARROT", 1])
-
-        return {
-            "farmer": ["PASS"],
-            "hands": [],
-            "market": market_orders,
-        }
 
 
 class PFSPLadder:

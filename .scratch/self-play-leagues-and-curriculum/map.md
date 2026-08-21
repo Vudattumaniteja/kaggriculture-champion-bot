@@ -13,10 +13,10 @@ A validated, modular Self-Play League and Accelerated Curriculum subsystem in `g
 
 ## Decisions so far
 
-<!-- index of closed tickets will be recorded here -->
+- [x] **#27 Parameterized Heuristic Specialist Archetypes**: Parameterized the 5 heuristic archetypes (`DeterministicGrandmaster`, `CarrotMonoculture`, `MelonRusher`, `DairySyndicate`, `TownShopSaturator`) in `grilling model/prototype/specialists.py` and integrated with `HeuristicSpecialist` in `grilling model/src/league.py`. Verified with 10 tournament match replays.
 <!-- GitHub Map Issue: https://github.com/Vudattumaniteja/kaggriculture-champion-bot/issues/26 -->
 <!-- Child Tickets:
-  #27 Parameterized Heuristic Specialist Archetypes (wayfinder:prototype)
+  [Closed] #27 Parameterized Heuristic Specialist Archetypes (wayfinder:prototype)
   #28 PFSP Checkpoint and Loss-Weighted Rematch Ladder (wayfinder:grilling)
   #29 Fast-Forward Warmup Pairing Matrix & State Diversity (wayfinder:prototype)
   #30 Sub-Trajectory Prioritized Experience Replay for Weak Matches (wayfinder:grilling)

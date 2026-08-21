@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 6: Self-Play Regimes, League Architecture & Accelerated Curriculum</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Lesson 0006 &bull; Plain English &bull; Self-Play & League Design</div>
+      <h1>Self-Play Regimes, League Architecture & Accelerated Curriculum</h1>
+      <p class="subtitle">How much self-play to use, how to avoid Rock-Paper-Scissors cycles, and how to train 10x faster with flight simulator jumpstarts.</p>
+    </header>
+
+    <div class="callout info">
+      <strong>Core Learning Objective:</strong> Discover the optimal sparring ratio for competitive AI training (The 40/40/20 Rule), how Prioritized Fictitious Self-Play (PFSP) stops the AI from forgetting past strategies, and how the 80/10/10 Fast-Forward Curriculum focuses compute on critical moments.
+    </div>
+
+    <h2>Part 1: The Non-Technical Guide (Intuition First)</h2>
+
+    <h3>1. The "Championship Sparring Camp" (The 40 / 40 / 20 Rule)</h3>
+    <p>
+      Imagine an Olympic champion boxer preparing for a world title fight. How should they spend their sparring rounds?
+    </p>
+    <div class="card">
+      <ul>
+        <li>
+          <strong>40% Sparring with an Identical Twin (Active Mirror Self-Play):</strong><br>
+          You spar against someone who copies your current speed, technique, and style. When you make a small defensive mistake, they exploit it immediately. This pushes your limits.
+        </li>
+        <li>
+          <strong>40% Rematches Against Past Tough Rivals (PFSP Historical Pool):</strong><br>
+          You don't waste time sparring partners you beat 100% of the time. You specifically review tape and spar against past opponents who knocked you down or exposed your weaknesses. This ensures you never forget how to beat older strategies.
+        </li>
+        <li>
+          <strong>20% Sparring with Extreme Style Specialists (Fixed Heuristics):</strong><br>
+          You invite an aggressive wrestler, a tall southpaw kickboxer, and a rapid counter-puncher into camp. Even if their style is one-dimensional, it ensures you never forget how to handle a sudden rush or an unorthodox attack.
+        </li>
+      </ul>
+      <p>
+        <strong>In Kaggriculture:</strong> If our bot only plays against itself, it can get stuck in a "Rock-Paper-Scissors" loop (Strategy A beats B, B beats C, C beats A). By using the <strong>40% Active Self-Play + 40% Past Rivals + 20% Heuristic Specialists</strong> mix, our bot develops an invincible, well-rounded game.
+      </p>
+    </div>
+
+    <h3>2. The "Flight Simulator" Analogy (The 80 / 10 / 10 Curriculum)</h3>
+    <p>
+      Airline pilots do not spend 90% of their flight simulator training flying in a straight line at 35,000 feet on autopilot. That would waste time and money.
+    </p>
+    <div class="card">
+      <p>
+        <strong>How Flight Simulators Train Pilots:</strong>
+      </p>
+      <ul>
+        <li><strong>80% Full Flights:</strong> Normal takeoff to landing to maintain procedure.</li>
+        <li><strong>10% Mid-Flight Engine Failure (Midgame Jumpstart):</strong> The pilot is instantly placed at 30,000 feet with an engine on fire to drill emergency handling.</li>
+        <li><strong>10% Blizzard Landing (Endgame Jumpstart):</strong> The pilot is placed 2 miles from the runway in heavy crosswinds to drill precision touchdown.</li>
+      </ul>
+      <p>
+        <strong>In Kaggriculture:</strong> Days 1 to 10 are simple tilling and basic watering. The hardest decisions happen on <strong>Day 14</strong> (capital expansion) and <strong>Day 26</strong> (final crop harvest & market liquidation).
+      </p>
+      <p>
+        Our curriculum fast-forwards 20% of training games directly to Days 14 and 26 in less than 150 milliseconds on the CPU, letting the AI practice critical moments 10 times more often.
+      </p>
+    </div>
+
+    <h3>3. Cooling Down Exploration (The Gumbel Temperature)</h3>
+    <p>
+      When a teenager learns chess, they try bizarre moves to see what happens (high curiosity/temperature). When a grandmaster plays in the world championship, they play the sharpest, most calculated move every turn (zero temperature).
+    </p>
+    <div class="card">
+      <p>
+        We use a <strong>Two-Stage Temperature Schedule ($\tau = 1.0 \to 0.0$)</strong>:
+      </p>
+      <ul>
+        <li><strong>Early Training:</strong> High temperature ($\tau = 1.0$) + Dirichlet exploration noise to discover bold new crop combinations and early land expansion timings.</li>
+        <li><strong>Late Training / Tournament Play:</strong> Zero temperature ($\tau = 0.0$) for razor-sharp, deterministic execution.</li>
+      </ul>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2>Part 2: Technical Blueprint & Mathematics</h2>
+
+    <h3>1. Prioritized Fictitious Self-Play (PFSP) Formulation</h3>
+    <p>
+      Let $\mathcal{H} = \{\pi_1, \pi_2, \dots, \pi_N\}$ be the pool of historical checkpoints. The sampling probability $P(i)$ is weighted by the Champion's loss rate against that checkpoint:
+    </p>
+    <pre><code>P(i) = max( 0.05, ( 1.0 - WinRate_i )^1.5 ) / Sum_Weights</code></pre>
+    <p>
+      Checkpoints that defeated the Champion recently receive <strong>20x higher training frequency</strong>, forcing the policy to patch its tactical vulnerabilities immediately.
+    </p>
+
+    <h3>2. Isolated Sub-Trajectory GAE (No Warmup Contamination)</h3>
+    <p>
+      When fast-forwarding to Day 14 ($t_{\text{start}} = 336$), we compute Generalized Advantage Estimation strictly on the neural portion of the trajectory ($t \ge t_{\text{start}}$):
+    </p>
+    <pre><code>delta_t = r_t + gamma * V(s_{t+1}) - V(s_t)   # for t >= t_start
+A_t = sum_{l=0}^{T - t - 1} (gamma * lambda)^l * delta_{t+l}
+# Gradients for t < t_start are strictly 0.0 (Zero heuristic bias)</code></pre>
+
+    <h3>3. Mask-Safe Dirichlet Exploration Noise</h3>
+    <p>
+      To add exploration noise without violating legal action rules, Dirichlet noise $\boldsymbol{\eta} \sim \text{Dir}(\alpha)$ is blended <em>strictly over the valid action mask</em>:
+    </p>
+    <pre><code>pi'(a_k) = (1.0 - eps) * pi(a_k) + eps * eta_k   # only where mask[k] == 1</code></pre>
+
+    <h3>4. 500k Binary SumTree Prioritized Replay Buffer (PER)</h3>
+    <p>
+      Transitions are stored in an $\mathcal{O}(\log N)$ Binary SumTree where sampling priority is proportional to Temporal Difference error: $p_i = (|\delta_i| + \epsilon)^{0.6}$.
+    </p>
+
+    <h2>Part 3: Interactive Knowledge Check</h2>
+    <div class="quiz-box" id="quiz-6">
+      <div class="quiz-title">Concept Check: Why do we include 20% Fixed Heuristic Specialists in our self-play league?</div>
+      <ul class="quiz-options">
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Heuristics are static baselines, not benchmark loggers.')">
+          A) Because heuristic bots are required to generate Kaggle leaderboard submissions.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, true, 'Spot on! Pure self-play can drift into weird mutual habits. Fixed specialists keep the AI grounded against extreme aggressive rushes.')">
+          B) Because pure self-play can drift into collusive or cyclic metas; fixed specialists keep the agent grounded against orthodox rush strategies.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'The Hungarian solver is independent of heuristic opponents.')">
+          C) Because the Hungarian micro solver only works against heuristic bots.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Sub-trajectory GAE works with any opponent.')">
+          D) Because sub-trajectory GAE requires deterministic opponents to calculate advantages.
+        </li>
+      </ul>
+      <div class="quiz-feedback" id="feedback-6"></div>
+    </div>
+
+    <h2>Summary of League & Curriculum Architecture</h2>
+    <ol>
+      <li><strong>The 40/40/20 Sparring Rule:</strong> 40% Active Self-Play Mirror + 40% PFSP Past Rivals + 20% Fixed Heuristic Specialists.</li>
+      <li><strong>The 80/10/10 Jumpstart Curriculum:</strong> Fast-forward 20% of games to Midgame (Day 14) and Endgame (Day 26) to drill high-leverage decisions.</li>
+      <li><strong>Mask-Safe Dirichlet & Gumbel Cooling:</strong> Maintain legal exploration early and lock in deterministic grandmaster play late.</li>
+    </ol>
+
+    <footer>
+      <span><a href="0005-clean-rl-reward-and-penalty-architecture.html">&larr; Back to Lesson 5</a></span>
+      <span><a href="../reference/03-hierarchical-rl-and-alphastar-architecture.html">Go to Reference Sheet &rarr;</a></span>
+    </footer>
+  </div>
+
+  <script>
+    function checkAnswer(el, isCorrect, explanation) {
+      const parent = el.closest('.quiz-box');
+      const feedback = parent.querySelector('.quiz-feedback');
+      const options = parent.querySelectorAll('.quiz-option');
+      
+      options.forEach(opt => {
+        opt.classList.remove('selected-correct', 'selected-wrong');
+      });
+
+      if (isCorrect) {
+        el.classList.add('selected-correct');
+        feedback.className = 'quiz-feedback show callout info';
+        feedback.innerHTML = '<strong>Excellent!</strong> ' + explanation;
+      } else {
+        el.classList.add('selected-wrong');
+        feedback.className = 'quiz-feedback show callout danger';
+        feedback.innerHTML = '<strong>Try again:</strong> ' + explanation;
+      }
+    }
+  </script>
+</body>
+</html>

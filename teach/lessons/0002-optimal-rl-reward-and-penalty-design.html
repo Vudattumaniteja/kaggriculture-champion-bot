@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 2: How Rewards and Penalties Shape AI Behavior (Plain English to Technical Details)</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Lesson 0002 &bull; Plain English &bull; Reward Design</div>
+      <h1>How Rewards and Penalties Shape AI Behavior</h1>
+      <p class="subtitle">A plain-English guide to training our farming bot, followed by the exact formulas that fix our RL underperformance.</p>
+    </header>
+
+    <div class="callout info">
+      <strong>What this lesson covers:</strong> First, we explain in simple, non-technical terms why our AI made strange decisions and earned less money than our pretrained model. Then, we show the exact math and code we use to fix it.
+    </div>
+
+    <h2>Part 1: The Non-Technical Guide (Intuition First)</h2>
+
+    <h3>1. The "Lazy Winner" Problem (Why Our Bot Stopped Making Money)</h3>
+    <p>
+      Imagine you enter a running race. If the person next to you is walking very slowly, you only need to jog slightly faster than them to win the trophy. You finish the race in 20 minutes, win the prize, and go home feeling good.
+    </p>
+    <p>
+      Now imagine you enter the Olympic finals where world champions finish in 9 seconds. Because you trained by barely beating a slow walker, you get crushed.
+    </p>
+    <div class="card">
+      <p>
+        <strong>What happened to our AI:</strong> Our RL program rewarded the bot purely for <em>beating its opponent</em> (Margin = My Cash &minus; Opponent Cash). When playing against weak starter bots that only make $3,000, our bot figured out it could win easily by making $8,000. It stopped investing, stopped planting high-value melons, and became lazy.
+      </p>
+      <p>
+        <strong>The Fix:</strong> We change the scoring system to reward <strong>80% Absolute Wealth + 20% Victory Margin</strong>. Now the bot is driven to make as much money as possible ($35,000 to $40,000+) while still keeping an eye on winning the match.
+      </p>
+    </div>
+
+    <h3>2. The "Buying Seeds on the Last Day" Problem (Asset Timelines)</h3>
+    <p>
+      Imagine you run a farm that closes down permanently in 2 days. A melon takes 12 days to grow. If you spend $100 buying melon seeds today, that money is completely wasted because the melon will never grow before the farm closes.
+    </p>
+    <p>
+      Our initial AI didn't understand the calendar. It treated a seed bought on Day 2 as having the exact same value as a seed bought on Day 29.
+    </p>
+    <div class="card">
+      <p>
+        <strong>The Fix (Maturity Timelines):</strong> We give every asset an expiration clock:
+      </p>
+      <ul>
+        <li><strong>On Day 5:</strong> A melon seed is worth a lot of future money because it has plenty of time to grow and sell.</li>
+        <li><strong>On Day 28:</strong> A melon seed is worth $0 because it cannot finish growing before Day 30. The bot is rewarded for planting fast 2-day carrots instead.</li>
+        <li><strong>On Day 30:</strong> Only liquid cash counts. All produce must be sold at the market before the final bell rings.</li>
+      </ul>
+    </div>
+
+    <h3>3. Physical Guardrails vs. Yelling (Action Masking vs. Penalties)</h3>
+    <p>
+      Imagine teaching someone how to drive near a cliff. You have two options:
+    </p>
+    <ol>
+      <li><strong>The Penalty Method:</strong> Let them drive off the cliff, and then give them a massive fine while they are falling.</li>
+      <li><strong>The Guardrail Method:</strong> Put a strong steel guardrail on the edge of the road so the car physically cannot steer off the cliff in the first place.</li>
+    </ol>
+    <div class="card">
+      <p>
+        In older RL programs, we used the Penalty Method (punishing the bot with -2,500 points when it tried to buy things without enough money). This confused the bot and made it terrified of taking any risks.
+      </p>
+      <p>
+        <strong>The Modern Approach (Guardrails / Action Masking):</strong> We physically disable illegal moves inside the AI's brain before it makes a choice. If the bot has $500, the option to buy a $1,000 plot of land is simply grayed out. The AI never gets punished, never gets confused, and learns much faster.
+      </p>
+    </div>
+
+    <h3>4. "Don't Forget What the Master Taught You" (Policy Anchoring)</h3>
+    <p>
+      Our pretrained bot learned grandmaster farming strategies by studying thousands of top games. But when we turned on Reinforcement Learning, the bot started experimenting with random moves to see what would happen.
+    </p>
+    <p>
+      Without a leash, it forgot its grandmaster training and started doing weird things.
+    </p>
+    <div class="card">
+      <p>
+        <strong>The Leash (KL Policy Anchor):</strong> We add an invisible rubber band connecting the RL bot to the pretrained grandmaster bot. The RL bot is allowed to test new ideas and fine-tune small decisions, but if it drifts too far from the grandmaster's core fundamentals, the rubber band pulls it back.
+      </p>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2>Part 2: The Technical Details & Mathematical Formulas</h2>
+    <p>
+      Now that we have the intuitive picture, here is how we write these four principles into exact code and equations.
+    </p>
+
+    <h3>1. Potential-Based Reward Shaping (PBRS)</h3>
+    <p>
+      To prevent reward hacking, Ng et al. (1999) proved that intermediate rewards must come from changes in a total net-worth potential function $\Phi(s_t, t)$:
+    </p>
+    <pre><code>r'_t = r_t + gamma * Phi(s_{t+1}, t+1) - Phi(s_t, t)  # gamma = 0.995</code></pre>
+    <p>
+      Because terms telescope over 720 turns, the sum of shaped rewards strictly equals the terminal cash outcome:
+      $$\sum_{t=0}^{T-1} \gamma^t r'_t = \sum_{t=0}^{T-1} \gamma^t r_t + \gamma^T \text{Cash}_{720} - \Phi(s_0, 0)$$
+    </p>
+
+    <h3>2. The 80/20 Hybrid Net Worth Formula</h3>
+    <p>
+      We compute the net worth of both the agent and the opponent, then combine them:
+    </p>
+    <pre><code># grilling model/src/pbrs_gae.py
+Phi_agent = Cash + Crop_Value(t) + Animal_Value(t) + Seed_Value(t) + Shed_Value(t) - Deadweight(t)
+Phi_opp   = Cash_opp + Crop_Value_opp(t) + Animal_Value_opp(t) + ...
+
+Phi_target = 0.80 * Phi_agent + 0.20 * (Phi_agent - Phi_opp)</code></pre>
+
+    <h3>3. Asset Decay Curves $\omega_k(t)$</h3>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th>Lifespan / Growth Time</th>
+            <th>Decay Multiplier $\omega(t)$</th>
+            <th>Behavior at End of Game</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Planted Crops</strong></td>
+            <td>Carrot (3d), Wheat (4d), Melon (12d)</td>
+            <td>$\omega = \text{clamp}\left(\frac{720 - t - 24}{T_{\text{grow}} - 24}, 0.0, 1.0\right)$</td>
+            <td>Drops to 0.0 on Day 29 if crop cannot finish growing.</td>
+          </tr>
+          <tr>
+            <td><strong>Animals</strong></td>
+            <td>Goose, Sheep, Cow</td>
+            <td>$\omega = \text{clamp}\left(\frac{720 - t - 48}{240 - 48}, 0.0, 1.0\right)$</td>
+            <td>Drops to 0.0 on Day 28 because feed cost exceeds remaining milk/wool yield.</td>
+          </tr>
+          <tr>
+            <td><strong>Seeds</strong></td>
+            <td>Per-crop basis</td>
+            <td>$1.0$ if $720 - t \ge T_{\text{grow}} + 24$, else $0.0$</td>
+            <td>Becomes $0.0$ deadweight if purchased too late.</td>
+          </tr>
+          <tr>
+            <td><strong>Shed Goods</strong></td>
+            <td>Inventory in barn</td>
+            <td>Smooth decay from $1.0 \to 0.5 \to 0.0$ across Days 28 to 30</td>
+            <td>Incentivizes steady selling rather than panic dumping at Turn 718.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4. The Policy Anchor (AWAC + KL Regularization)</h3>
+    <p>
+      In <code>src/trainer.py</code>, we add the KL divergence penalty between our active RL network ($\pi_{\text{RL}}$) and our frozen pretrained grandmaster network ($\pi_{\text{pre}}$):
+    </p>
+    <pre><code># Total Training Loss:
+L_total = L_policy + lambda_val * L_critic + lambda_kl * D_KL( pi_RL || pi_pre )
+
+# where lambda_kl = 0.05 (annealed gently over training)</code></pre>
+
+    <h2>Part 3: Interactive Knowledge Check</h2>
+    <div class="quiz-box" id="quiz-2">
+      <div class="quiz-title">Concept Check: Why do we use Action Masking instead of negative reward penalties?</div>
+      <ul class="quiz-options">
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Action masking does not speed up Python iteration; it stabilizes the AI gradients.')">
+          A) Because action masking makes the Python simulator run 10 times faster.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, true, 'Spot on! Action masking grays out illegal moves before the AI chooses, preventing scary penalty cliffs and stabilizing training.')">
+          B) Because action masking physically disables illegal choices, preventing gradient instability and fear-driven inaction.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Action masking applies to discrete neural choices, not Hungarian pathfinding.')">
+          C) Because action masking is only used by the Hungarian micro assignment solver.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Action masking works with any discount factor.')">
+          D) Because action masking allows gamma to be set to exactly 1.0.
+        </li>
+      </ul>
+      <div class="quiz-feedback" id="feedback-2"></div>
+    </div>
+
+    <h2>Summary of Next Steps</h2>
+    <p>
+      We have translated our real-world farming intuition into a concrete engineering plan:
+    </p>
+    <ol>
+      <li>Set <strong>80% Absolute Net Worth + 20% Relative Lead</strong> in <code>pbrs_gae.py</code>.</li>
+      <li>Use <strong>Smooth Maturity Curves</strong> for crops, livestock, and seeds so the bot never buys late deadweight.</li>
+      <li>Add the <strong>KL Policy Anchor</strong> in <code>src/trainer.py</code> so RL never destroys the pretrained grandmaster skills.</li>
+    </ol>
+
+    <footer>
+      <span><a href="0001-reinforcement-learning-fundamentals-kaggriculture.html">&larr; Back to Lesson 1</a></span>
+      <span><a href="../reference/02-reward-equations-and-potential-functions.html">Go to Reference 02 &rarr;</a></span>
+    </footer>
+  </div>
+
+  <script>
+    function checkAnswer(el, isCorrect, explanation) {
+      const parent = el.closest('.quiz-box');
+      const feedback = parent.querySelector('.quiz-feedback');
+      const options = parent.querySelectorAll('.quiz-option');
+      
+      options.forEach(opt => {
+        opt.classList.remove('selected-correct', 'selected-wrong');
+      });
+
+      if (isCorrect) {
+        el.classList.add('selected-correct');
+        feedback.className = 'quiz-feedback show callout info';
+        feedback.innerHTML = '<strong>Excellent!</strong> ' + explanation;
+      } else {
+        el.classList.add('selected-wrong');
+        feedback.className = 'quiz-feedback show callout danger';
+        feedback.innerHTML = '<strong>Try again:</strong> ' + explanation;
+      }
+    }
+  </script>
+</body>
+</html>

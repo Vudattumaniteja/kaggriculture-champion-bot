@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reference 03: Hierarchical RL & AlphaStar Architecture Cheatsheet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Reference Material &bull; Architecture Matrix & Formulas</div>
+      <h1>Hierarchical RL & AlphaStar Architecture Reference</h1>
+      <p class="subtitle">Quick reference guide for Two-Tier Hierarchical Control, AlphaStar autoregressive factorization, and Multi-Head PPO balancing.</p>
+    </header>
+
+    <h2>1. Grandmaster Game AI Architecture Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>System</th>
+          <th>Domain</th>
+          <th>Macro Strategic Layer</th>
+          <th>Micro Tactical Layer</th>
+          <th>Communication Interface</th>
+          <th>RL Algorithm</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AlphaStar</strong> (DeepMind)</td>
+          <td>StarCraft II</td>
+          <td>Autoregressive heads + Human strategy $z$-vector</td>
+          <td>Spatial pointer networks + Unit selectors</td>
+          <td>Latent vectors & 2D spatial feature grids</td>
+          <td>Asymmetric Actor-Critic + V-trace / UPGO</td>
+        </tr>
+        <tr>
+          <td><strong>OpenAI Five</strong> (OpenAI)</td>
+          <td>Dota 2</td>
+          <td>4096-unit LSTM trunk maintaining macro state</td>
+          <td>Factorized hero ability / movement heads</td>
+          <td>Max-pooling entity embeddings across units</td>
+          <td>Dual-Clip PPO with Team Spirit reward annealing</td>
+        </tr>
+        <tr>
+          <td><strong>FeUdal Networks (FuN)</strong></td>
+          <td>Atari / 3D Navigation</td>
+          <td>Latent Dilated RNN Manager emitting goal vector $g_t$</td>
+          <td>Linear matrix projection Worker emitting actions</td>
+          <td>Cosine direction alignment $d_{\cos}(\Delta z, g_t)$</td>
+          <td>Transition Policy Gradients + Intrinsic Rewards</td>
+        </tr>
+        <tr>
+          <td><strong>Kaggriculture Champion Bot</strong></td>
+          <td>10x10 Farm Economy</td>
+          <td>FiLM SE-ResNet Policy (Heatmaps, Quotas, Market Fractions)</td>
+          <td>Hungarian Bipartite Matcher + $A^*$ Collision-Free Router</td>
+          <td>5-Channel Crop Heatmaps + Livestock Quotas</td>
+          <td>PBRS-GAE PPO / AWIL with Two-Group GradNorm</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. The Two-Tier Control Architecture</h2>
+    <div class="card">
+      <pre><code>[Observation: 24ch Spatial Grid (10x10) + 72-dim Economic Scalar Vector]
+                                    │
+                                    ▼
+       [High-Level Neural Policy Trunk (src/network.py:ChampionPolicyNetwork)]
+            ├── 5-Channel Crop Spatial Heatmaps: (5, 10, 10)
+            ├── Livestock Quotas: (3,) [Goose, Cow, Sheep]
+            ├── Workforce Hiring Logits: (13,) [0 to 12 workers]
+            ├── Land Expansion Logit: (1,) [NE: $1k, SW: $2k, SE: $4k]
+            ├── Seed Replenishment Logits: (5,)
+            └── Continuous Market Fractions: (9,)
+                                    │
+                                    ▼
+      [Low-Level Micro Assignment Solver (src/micro_solver.py)]
+            ├── 1. Priority Chore Queue: Feed (1200), Water (1180), Harvest (850), Plant (800 + Heatmap)
+            ├── 2. Scipy linear_sum_assignment: Cost = Distance * 4.0 - Utility * 0.1
+            ├── 3. Collision-Free Manhattan Step Router with Spatial Reservation Table
+            └── 4. Two-Stage Market Guardrails: Cow Feed Reservation + Midnight Shed Dump
+                                    │
+                                    ▼
+      [Dispatched Commands: {"farmer": [...], "hands": [[...]], "market": [[...]]}]</code></pre>
+    </div>
+
+    <h2>3. Mathematical Formulas for Multi-Head PPO Stabilization</h2>
+    <div class="card">
+      <h3>GradNorm Dynamic Loss Balancing (Chen et al., 2018)</h3>
+      <pre><code>G_i(t) = || grad_W ( w_i(t) * L_i(t) ) ||_2
+r_i(t) = ( L_i(t) / L_i(0) ) / Mean_Loss_Ratio
+Target_i = Mean_G * ( r_i(t) )^alpha      # alpha = 0.12
+L_gradnorm = sum_i | G_i(t) - Target_i |
+Normalize: sum_i w_i(t) = K</code></pre>
+
+      <h3>1001-Bin Symlog Two-Hot Value Critic (DreamerV3)</h3>
+      <pre><code>symlog(x) = sign(x) * ln(|x| + 1)
+L_critic = - sum_{b=1}^{1001} p_target,b * log( Softmax( V_logits )_b )</code></pre>
+    </div>
+
+    <footer>
+      <span><a href="../lessons/0003-hierarchical-reinforcement-learning-and-alphastar.html">&larr; Back to Lesson 3</a></span>
+      <span>Kaggriculture Teaching Workspace</span>
+    </footer>
+  </div>
+</body>
+</html>

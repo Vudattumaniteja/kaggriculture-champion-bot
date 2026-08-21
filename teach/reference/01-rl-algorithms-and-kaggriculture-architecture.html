@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reference 01: RL Algorithms & Kaggriculture Architecture Cheatsheet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Reference Material &bull; Architecture & Formulas</div>
+      <h1>RL Algorithms & Kaggriculture Architecture Reference</h1>
+      <p class="subtitle">Quick-lookup guide for reinforcement learning algorithms, reward shaping mathematics, and the 2-tier hierarchical engine.</p>
+    </header>
+
+    <h2>1. Reinforcement Learning Algorithm Comparison Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Algorithm</th>
+          <th>Type</th>
+          <th>Sample Efficiency</th>
+          <th>Combinatorial Action Handling</th>
+          <th>Offline Pretraining Compatibility</th>
+          <th>Verdict for Kaggriculture</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>PPO</strong> (Proximal Policy Optimization)</td>
+          <td>On-Policy Policy Gradient</td>
+          <td>Low</td>
+          <td>Moderate (Requires action masking & factorization)</td>
+          <td>Poor (Prone to catastrophic policy drift from expert data)</td>
+          <td>Viable only with strong KL anchors and fast simulators.</td>
+        </tr>
+        <tr>
+          <td><strong>AWR / AWIL</strong> (Advantage-Weighted Imitation)</td>
+          <td>Offline / Off-Policy Actor-Critic</td>
+          <td>Very High</td>
+          <td>High (Weighted cross-entropy on factorized heads)</td>
+          <td>Excellent (Gold standard for grandmaster replay training)</td>
+          <td><strong>Current Pretraining Engine</strong> in <code>pretrain.py</code>. Reaches $35k–$40k.</td>
+        </tr>
+        <tr>
+          <td><strong>AWAC</strong> (Advantage-Weighted Actor-Critic)</td>
+          <td>Offline-to-Online Fine-Tuning</td>
+          <td>High</td>
+          <td>High</td>
+          <td>Best in Class (Constrains online policy gradient to data support)</td>
+          <td><strong>Recommended Upgrade</strong> to fix RL underperformance.</td>
+        </tr>
+        <tr>
+          <td><strong>AlphaZero</strong></td>
+          <td>Self-Play Actor-Critic + MCTS</td>
+          <td>Moderate</td>
+          <td>Low (MCTS tree branches exponentially on 10x10 grids)</td>
+          <td>Not needed (Trains from scratch via self-play)</td>
+          <td>MCTS too slow for Kaggle 1s execution limit; adopt its network & Dirichlet noise instead.</td>
+        </tr>
+        <tr>
+          <td><strong>MuZero</strong></td>
+          <td>Model-Based Latent MCTS</td>
+          <td>High</td>
+          <td>Low-Moderate</td>
+          <td>Moderate</td>
+          <td>Our auxiliary World Model decoders use MuZero-style dynamics supervision.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. The 2-Tier Hierarchical Paradigm</h2>
+    <div class="card">
+      <p>
+        In complex strategy games, attempting to output raw robot/hand movements directly from a neural network creates a combinatorial explosion ($O(K! \cdot 5^K)$ moves per step). We solve this using DeepMind's hierarchical separation:
+      </p>
+      <pre><code>[Raw Observation State (10x10 grid, cash, shed, shop, market)]
+                      │
+                      ▼
+       [Feature Encoder (src/encoder.py)]
+                      │  ├── 24-channel spatial tensor: (24, 10, 10)
+                      │  └── 72-dimensional scalar economic vector
+                      ▼
+     [High-Level Macro Policy (src/network.py)]
+                      │  ├── Crop Heatmaps (5, 10, 10)
+                      │  ├── Livestock Quotas (Goose, Cow, Sheep)
+                      │  ├── Workforce Expansion (Hiring logits)
+                      │  ├── Land Expansion Logit (NE: $1k, SW: $2k, SE: $4k)
+                      │  ├── Seed Replenish Allocations
+                      │  └── Continuous Market Liquidation Fractions
+                      ▼
+  [Low-Level Micro Chore Solver (src/micro_solver.py)]
+                      │
+                      ├── 1. Generates atomic tasks (Feed, Water, Pasture, Harvest, Plant)
+                      ├── 2. Solves Bipartite Matching via Scipy Linear Sum Assignment (Hungarian)
+                      └── 3. Emits collision-free step movements & shed transfers
+                      ▼
+  [Final Turn Output: farmer action, hands actions, market queue]</code></pre>
+    </div>
+
+    <h2>3. Reward Shaping Mathematics & Core Formulas</h2>
+
+    <div class="card">
+      <h3>Potential-Based Reward Shaping (PBRS)</h3>
+      <p>Given state potential $\Phi(s, t)$, the transformed step reward is:</p>
+      <pre><code>r'_t = r_t + gamma * Phi(s_{t+1}, t+1) - Phi(s_t, t)</code></pre>
+      <p>
+        <strong>Policy Invariance Theorem (Ng et al., 1999):</strong> Any policy $\pi^*$ that maximizes $\mathbb{E}[\sum \gamma^t r'_t]$ is guaranteed to maximize $\mathbb{E}[\sum \gamma^t r_t]$.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Generalized Advantage Estimation (GAE)</h3>
+      <p>Balances bias (low $\lambda$) and variance (high $\lambda$) across multi-step rollouts:</p>
+      <pre><code>delta_t = r'_t + gamma * V(s_{t+1}) - V(s_t)
+A_t^{GAE} = sum_{l=0}^{T - t - 1} (gamma * lambda)^l * delta_{t+l}</code></pre>
+      <p><strong>Standard Parameters:</strong> $\gamma = 0.995, \lambda = 0.95$.</p>
+    </div>
+
+    <div class="card">
+      <h3>Advantage-Weighted Policy Loss (AWAC / AWIL)</h3>
+      <p>Updates policy weights using exponentiated advantage weights while keeping policy bounded:</p>
+      <pre><code>w_t = clip(exp((A_t - mu_A) / (tau * sigma_A)), 0.2, 5.0)
+L_policy = - sum_t w_t * log pi_theta(a_t | s_t) + lambda_kl * D_KL(pi_theta || pi_pretrained)</code></pre>
+    </div>
+
+    <footer>
+      <span><a href="../lessons/0001-reinforcement-learning-fundamentals-kaggriculture.html">&larr; Back to Lesson 0001</a></span>
+      <span>Kaggriculture Teaching Workspace</span>
+    </footer>
+  </div>
+</body>
+</html>

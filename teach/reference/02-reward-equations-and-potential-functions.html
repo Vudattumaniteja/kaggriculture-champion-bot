@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reference 02: Reward Equations & Potential Functions Cheatsheet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Reference Material &bull; Mathematical Cheatsheet</div>
+      <h1>Reward Equations & Potential Functions Reference</h1>
+      <p class="subtitle">Complete mathematical formulas and parameter settings for Kaggriculture PBRS, GAE, and Policy Regularization.</p>
+    </header>
+
+    <h2>1. The Complete Hybrid State Potential Equation</h2>
+    <div class="card">
+      <p>The state potential function for player $p$ at step $t$ is:</p>
+      <pre><code>Phi(s_t, t, p) = Cash_t + Phi_crop(s_t, t) + Phi_animal(s_t, t) + Phi_seed(s_t, t) + Phi_shed(s_t, t) + Phi_land(s_t, t) - Deadweight(t)</code></pre>
+      <p>The final training target blends absolute net worth and tournament win margin:</p>
+      <pre><code>Phi_target(s_t, t) = 0.80 * Phi(s_t, t, player) + 0.20 * [ Phi(s_t, t, player) - Phi(s_t, t, 1 - player) ]</code></pre>
+    </div>
+
+    <h2>2. Parameter Reference Table</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Recommended Value</th>
+          <th>Mathematical Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>gamma</code> (Discount Factor)</td>
+          <td><code>0.995</code></td>
+          <td>Ensures smooth temporal credit propagation across 720 turns ($\gamma^{720} \approx 0.027$).</td>
+        </tr>
+        <tr>
+          <td><code>lambda</code> (GAE Parameter)</td>
+          <td><code>0.95</code></td>
+          <td>Balances bias and variance in Generalized Advantage Estimation.</td>
+        </tr>
+        <tr>
+          <td><code>alpha_abs</code> (Absolute Weight)</td>
+          <td><code>0.80</code></td>
+          <td>Forces the agent to scale absolute economy to $35k+ rather than settling for low-cash wins.</td>
+        </tr>
+        <tr>
+          <td><code>alpha_rel</code> (Relative Weight)</td>
+          <td><code>0.20</code></td>
+          <td>Preserves tournament opponent awareness and edge-case winning margins.</td>
+        </tr>
+        <tr>
+          <td><code>lambda_kl</code> (Policy Anchor)</td>
+          <td><code>0.10 -> 0.02</code></td>
+          <td>Cosine-annealed KL regularizer preventing catastrophic drift from pretrained weights.</td>
+        </tr>
+        <tr>
+          <td><code>deadweight_coeff</code></td>
+          <td><code>1.0</code></td>
+          <td>Exact opportunity cost penalty at turn 718 (replaces artificial 2.0x panic cliff).</td>
+        </tr>
+        <tr>
+          <td><code>num_symlog_bins</code></td>
+          <td><code>1001</code></td>
+          <td>Categorical two-hot distribution bins covering $[-15.0, +15.0]$ in symlog space.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Python Code Blueprint for <code>pbrs_gae.py</code></h2>
+    <div class="card">
+      <pre><code>def compute_state_potential(
+    obs: Dict[str, Any],
+    player: int = 0,
+    total_turns: int = 720,
+    alpha_abs: float = 0.8,
+    alpha_rel: float = 0.2,
+    deadweight_penalty_coeff: float = 1.0,
+) -> float:
+    \"\"\"Computes 80/20 hybrid absolute/relative potential.\"\"\"
+    phi_player = _compute_player_net_worth(obs, player, total_turns, deadweight_penalty_coeff)
+    phi_opp = _compute_player_net_worth(obs, 1 - player, total_turns, deadweight_penalty_coeff)
+    
+    return alpha_abs * phi_player + alpha_rel * (phi_player - phi_opp)</code></pre>
+    </div>
+
+    <footer>
+      <span><a href="../lessons/0002-optimal-rl-reward-and-penalty-design.html">&larr; Back to Lesson 2</a></span>
+      <span>Kaggriculture Teaching Workspace</span>
+    </footer>
+  </div>
+</body>
+</html>

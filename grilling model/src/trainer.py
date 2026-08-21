@@ -79,7 +79,7 @@ class StagedAWILTrainer:
             x_spatial = batch["x_spatial"].to(self.device)
             x_scalar = batch["x_scalar"].to(self.device)
             target_crop = batch["target_crop_heatmaps"].to(self.device)
-            target_workforce = batch["target_workforce"].to(self.device)
+            target_workforce = torch.clamp(batch["target_workforce"].to(self.device), 0, 12)
             target_land = batch["target_land_expand"].to(self.device)
             target_seed = batch["target_seed_replenish"].to(self.device)
             target_market = batch["target_market_fractions"].to(self.device)

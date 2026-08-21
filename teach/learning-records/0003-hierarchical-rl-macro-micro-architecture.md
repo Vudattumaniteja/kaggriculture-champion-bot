@@ -1,0 +1,3 @@
+# Hierarchical Reinforcement Learning: Decoupling Strategic Macro Policy from Hungarian Micro Execution
+
+In massive combinatorial action spaces, monolithic end-to-end neural policies fail due to exponential action branching and worker non-stationarity. Decoupling the system into a high-level Neural Macro Manager (emitting spatial heatmaps and investment quotas optimized via PPO) and a low-level deterministic Hungarian Micro Solver achieves O(1) worker sample efficiency, guarantees collision-free coordination, and allows standard policy gradient theorems to optimize high-level strategy without requiring backpropagation through discrete physical routing algorithms.

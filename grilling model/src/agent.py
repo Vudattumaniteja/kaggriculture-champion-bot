@@ -32,6 +32,8 @@ class ChampionAgent:
         self.network.eval()
         if model_weights_path is not None:
             state_dict = torch.load(model_weights_path, map_location=self.device)
+            if isinstance(state_dict, dict) and "network_state_dict" in state_dict:
+                state_dict = state_dict["network_state_dict"]
             self.network.load_state_dict(state_dict)
 
     def __call__(self, obs: Dict[str, Any], config: Any = None) -> Dict[str, Any]:

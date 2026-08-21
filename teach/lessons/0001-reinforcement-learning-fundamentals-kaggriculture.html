@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 1: Deconstructing Our Kaggriculture RL Systems vs. The AlphaGo Blueprint</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Lesson 0001 &bull; Core Foundations</div>
+      <h1>Deconstructing Our Kaggriculture RL Systems vs. The AlphaGo Blueprint</h1>
+      <p class="subtitle">Why our pretrained model beats our RL bot, what the two codebase programs actually do, and how grandmaster AI systems solve long-horizon games.</p>
+    </header>
+
+    <div class="callout info">
+      <strong>Core Learning Objective:</strong> Understand the exact mathematical and algorithmic mechanisms behind the two RL reward systems in our repository, discover how AlphaGo/AlphaZero operate, and identify why our pretrained model currently earns more money than our RL agent.
+    </div>
+
+    <h2>1. The Mystery: Why Does Pretraining Outperform RL?</h2>
+    <p>
+      In our workspace, the supervised / Advantage-Weighted Imitation Learning (AWIL) model in <code>grilling model/data/pretrained_champion.pt</code> reaches $30,000 to $40,000+ in terminal cash. However, after running reinforcement learning training, the RL checkpoint in <code>weights/champion_weights.pt</code> earns significantly less money.
+    </p>
+    <p>
+      This is a classic phenomenon in complex strategy games called <strong>Reinforcement Learning Policy Drift & Objective Misalignment</strong>. Three specific flaws cause this gap:
+    </p>
+    <ul>
+      <li>
+        <strong>1. Relative Margin Trap vs. Absolute Economic Scaling:</strong> Our RL reward in <code>pbrs_gae.py</code> optimizes <em>relative margin</em> (<code>agent_cash - opp_cash</code>). Against a baseline bot making only $3,000, our RL agent earns a massive +$5,000 reward by finishing with just $8,000 cash. It has zero incentive to push for an optimal $35,000+ economy. Meanwhile, the pretrained model was trained on high-rolling grandmaster replays.
+      </li>
+      <li>
+        <strong>2. Unanchored Policy Gradients:</strong> During RL updates, stochastic exploration (Dirichlet noise and Gumbel sampling) perturbs the network weights. Without a KL divergence penalty to keep the policy anchored to the pretrained grandmaster weights, the agent drifts into suboptimal macro strategies.
+      </li>
+      <li>
+        <strong>3. Turn 718 Liquidation Panic:</strong> A harsh 2.0x deadweight penalty at Turn 718 causes the RL agent to panic-dump valuable assets early at low prices or avoid planting high-yield crops late in the game.
+      </li>
+    </ul>
+
+    <h2>2. Deep Dive: The Two RL Programs in Our Codebase</h2>
+    <p>Our repository contains two distinct generations of reward and credit assignment code:</p>
+
+    <div class="card">
+      <h3>Program 1: Legacy 4-Pillar Reward (<code>src/training/overnight_rl_pipeline.py</code>)</h3>
+      <pre><code># src/training/overnight_rl_pipeline.py:885-894
+win_margin = cash - opp_cash
+growth_bonus = 1.5 * ((max(0.0, cash - 3000.0) / 5000.0) ** 1.5) * 1000.0
+cap_loss_penalty = 2.5 * (max(0.0, 3000.0 - cash) / 1000.0) * 1000.0
+deadweight_penalty = 2.0 * (deadweight / 1000.0) * 1000.0
+
+raw_reward = win_margin + growth_bonus - cap_loss_penalty - deadweight_penalty</code></pre>
+      <div class="callout danger">
+        <strong>Fatal Flaws in Program 1:</strong>
+        <ol>
+          <li><strong>The $3,000 Capital Cliff:</strong> Punishing the agent 2.5x whenever cash drops below $3,000 prevents it from buying cows ($1,500) or expanding land ($1,000–$2,000) early on, paralyzing growth.</li>
+          <li><strong>Flat Step-Broadcasting Bug:</strong> The scalar <code>raw_reward</code> at turn 719 is copied across all 720 turns (<code>y_t = raw_reward</code>). A good decision on Day 2 gets the exact same target value as a bad decision on Day 29.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Program 2: Maturity-Aware PBRS & GAE (<code>grilling model/src/pbrs_gae.py</code>)</h3>
+      <p>Program 2 fixes the mathematical flaws of Program 1 by implementing <strong>Potential-Based Reward Shaping (PBRS)</strong> (Ng et al., 1999) and <strong>Generalized Advantage Estimation (GAE)</strong> (Schulman et al., 2015):</p>
+      <pre><code># Dynamic State Potential:
+Phi(s_t, t) = Cash_t + sum_k [ omega_k(t) * Asset_Value_k ] - Deadweight(t)
+
+# Step-wise Shaped Reward:
+r'_t = r_t + gamma * Phi_rel(s_{t+1}, t+1) - Phi_rel(s_t, t)  # gamma = 0.995
+
+# Temporal GAE Advantage:
+delta_t = r'_t + gamma * V(s_{t+1}) - V(s_t)
+A_t = sum_{l=0}^{T-t-1} (gamma * lambda)^l * delta_{t+l}</code></pre>
+      <p>
+        <strong>Why Program 2 is superior:</strong> It provides dense, step-by-step feedback across 720 turns and guarantees that shaped rewards mathematically telescope back to the true final match outcome.
+      </p>
+    </div>
+
+    <h2>3. How the GOATs Work: The AlphaGo / AlphaZero Blueprint</h2>
+    <p>How did DeepMind build AlphaGo, AlphaZero, and AlphaStar to dominate Go, Chess, and StarCraft II?</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>System</th>
+          <th>Core Paradigm</th>
+          <th>Policy / Value Architecture</th>
+          <th>Search / Planning Mechanism</th>
+          <th>Relevance to Kaggriculture</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AlphaGo (2016)</strong></td>
+          <td>Supervised Pretraining + RL Self-Play</td>
+          <td>Separate SL Policy, RL Policy, and Value Net</td>
+          <td>MCTS combining rollout policy and Value Net</td>
+          <td>Direct inspiration for our AWIL Pretraining + RL pipeline.</td>
+        </tr>
+        <tr>
+          <td><strong>AlphaZero (2017)</strong></td>
+          <td>Zero-Knowledge Pure Self-Play</td>
+          <td>Single Dual-Headed ResNet (Policy + Value)</td>
+          <td>MCTS guided by neural prior + Dirichlet exploration noise</td>
+          <td>Source of our Gumbel temperature & Dirichlet noise formulas.</td>
+        </tr>
+        <tr>
+          <td><strong>MuZero (2020)</strong></td>
+          <td>Model-Based Latent Planning</td>
+          <td>Representation, Latent Dynamics, Prediction Heads</td>
+          <td>MCTS inside learned latent state space</td>
+          <td>Inspiration for our auxiliary World Model decoders.</td>
+        </tr>
+        <tr>
+          <td><strong>AlphaStar (2019)</strong></td>
+          <td>Hierarchical Multi-Agent League</td>
+          <td>Macro Strategy Policy + Micro Unit Dispatchers</td>
+          <td>Pointer networks + Fictitious League Self-Play</td>
+          <td>Direct foundation for our Neural Macro + Hungarian Micro architecture.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <strong>The DeepMind Recipe for Winning Games:</strong>
+      <ol>
+        <li><strong>Supervised Pretraining (Warmup):</strong> Train on high-quality human/expert trajectories so the policy learns basic opening fundamentals and avoids initial random wanderings.</li>
+        <li><strong>Dual-Headed Value & Policy Network:</strong> The value network predicts game outcomes, while the policy network predicts optimal move probabilities.</li>
+        <li><strong>Hierarchical Separation:</strong> In games with large action spaces (like StarCraft and Kaggriculture), neural networks handle <em>macro strategy</em> (what to plant, when to expand), while exact deterministic algorithms (Hungarian matching / A* routing) handle <em>micro execution</em> (which farmhand walks to which tile).</li>
+        <li><strong>Advantage-Weighted Regularization:</strong> When fine-tuning with RL, keep an anchor to the pretrained model so policy gradients do not destroy grandmaster tactics.</li>
+      </ol>
+    </div>
+
+    <h2>4. The Optimal Solution for Kaggriculture</h2>
+    <p>To make our RL model beat our pretrained checkpoint, we need the following three changes:</p>
+    <ul>
+      <li><strong>Switch Objective to Absolute Net Worth:</strong> Change <code>Phi_rel</code> in <code>pbrs_gae.py</code> to <code>Phi_abs = Cash + Asset_Potential</code> (or an 80% Absolute / 20% Relative hybrid). This forces the RL agent to compound cash to $35,000+ regardless of opponent strength.</li>
+      <li><strong>Add an AWAC / KL Policy Anchor:</strong> Add an auxiliary loss <code>L_anchor = lambda_bc * KL(pi_RL || pi_pretrained)</code> during RL training in <code>src/trainer.py</code>. This allows the RL agent to improve edge cases without unlearning grandmaster macro strategies.</li>
+      <li><strong>Smooth Turn 718 Liquidation:</strong> Replace the sharp 2.0x Turn 718 penalty cliff with a smooth linear asset decay from Day 28 to Day 30 at 1.0x cost.</li>
+    </ul>
+
+    <h2>5. Interactive Knowledge Check</h2>
+    <div class="quiz-box" id="quiz-1">
+      <div class="quiz-title">Concept Check: Why did the RL model get stuck earning less cash than the pretrained model?</div>
+      <ul class="quiz-options">
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Option A is incorrect because GAE provides valid temporal credit.')">
+          A) Generalized Advantage Estimation (GAE) caused gradient explosion across 720 turns.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, true, 'Correct! Relative margin rewards satisfied the agent with small $8k vs $3k wins, and unanchored policy gradients destroyed the expert macro strategies.')">
+          B) The relative margin reward rewarded low-cash wins against weak opponents while policy drift erased grandmaster macro skills.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Option C is incorrect because Hungarian matching handles micro execution cleanly.')">
+          C) The Hungarian bipartite solver failed to assign farmhand tasks correctly.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Option D is incorrect because the 24-channel spatial encoder captures the 10x10 board accurately.')">
+          D) The 24-channel SE-ResNet spatial encoder lost spatial information about crop plots.
+        </li>
+      </ul>
+      <div class="quiz-feedback" id="feedback-1"></div>
+    </div>
+
+    <h2>6. Next Steps & Recommended Primary Reading</h2>
+    <p>
+      <strong>Primary Source:</strong> Read the seminal paper on Advantage-Weighted Actor-Critic: <br>
+      <a href="https://arxiv.org/abs/2006.09359" target="_blank">Nair et al. (2020) — "Accelerating Online Reinforcement Learning with Offline Datasets" (AWAC)</a>.
+    </p>
+    <p>
+      Review the architecture cheat sheet in <a href="../reference/01-rl-algorithms-and-kaggriculture-architecture.html">Reference 01: RL Architecture Cheatsheet</a>.
+    </p>
+
+    <div class="callout">
+      <strong>Have questions or want to dive into specific code lines?</strong><br>
+      Ask your AI mentor in the chat prompt anytime. We can inspect specific loss functions, potential weight curves, or step through any equation together.
+    </div>
+
+    <footer>
+      <span>Kaggriculture AI Masterclass</span>
+      <span><a href="../reference/01-rl-algorithms-and-kaggriculture-architecture.html">Go to Reference Sheet &rarr;</a></span>
+    </footer>
+  </div>
+
+  <script>
+    function checkAnswer(el, isCorrect, explanation) {
+      const parent = el.closest('.quiz-box');
+      const feedback = parent.querySelector('.quiz-feedback');
+      const options = parent.querySelectorAll('.quiz-option');
+      
+      options.forEach(opt => {
+        opt.classList.remove('selected-correct', 'selected-wrong');
+      });
+
+      if (isCorrect) {
+        el.classList.add('selected-correct');
+        feedback.className = 'quiz-feedback show callout info';
+        feedback.innerHTML = '<strong>Excellent!</strong> ' + explanation;
+      } else {
+        el.classList.add('selected-wrong');
+        feedback.className = 'quiz-feedback show callout danger';
+        feedback.innerHTML = '<strong>Try again:</strong> ' + explanation;
+      }
+    }
+  </script>
+</body>
+</html>

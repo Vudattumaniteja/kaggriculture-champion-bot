@@ -28,6 +28,8 @@ def serialize_weights_to_base85(weights_path: str) -> str:
     Loads PyTorch weights, casts floating point tensors to FP16, compresses with gzip, and returns base85 string.
     """
     state_dict = torch.load(weights_path, map_location="cpu")
+    if isinstance(state_dict, dict) and "network_state_dict" in state_dict:
+        state_dict = state_dict["network_state_dict"]
     fp16_state_dict = {}
     for k, v in state_dict.items():
         if isinstance(v, torch.Tensor) and v.is_floating_point():
@@ -1361,11 +1363,21 @@ def build_submission_file(output_path: str, weights_path: Optional[str] = None):
 
 
 if __name__ == "__main__":
-    out_file = os.path.join(os.path.dirname(__file__), "submission.py")
-    ckpt_file = os.path.join(os.path.dirname(__file__), "weights", "champion_weights.pt")
-    if not os.path.exists(ckpt_file):
-        os.makedirs(os.path.dirname(ckpt_file), exist_ok=True)
+    import argparse
+    parser = argparse.ArgumentParser(description="Package standalone Kaggle submission file.")
+    default_ckpt = os.path.join(os.path.dirname(__file__), "data", "pretrained_champion.pt")
+    if not os.path.exists(default_ckpt):
+        default_ckpt = os.path.join(os.path.dirname(__file__), "weights", "champion_weights.pt")
+    default_out = os.path.join(os.path.dirname(__file__), "submission.py")
+
+    parser.add_argument("--weights", type=str, default=default_ckpt, help="Path to checkpoint .pt file")
+    parser.add_argument("--output", type=str, default=default_out, help="Output submission.py path")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.weights):
+        os.makedirs(os.path.dirname(args.weights), exist_ok=True)
         net = ChampionFullNetwork()
-        torch.save(net.state_dict(), ckpt_file)
-    build_submission_file(out_file, ckpt_file)
-    print(f"Built standalone submission bot at {out_file}")
+        torch.save(net.state_dict(), args.weights)
+
+    build_submission_file(args.output, args.weights)
+    print(f"Built standalone submission bot at {args.output} using weights {args.weights}")

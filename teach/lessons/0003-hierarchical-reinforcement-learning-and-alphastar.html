@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 3: Hierarchical Reinforcement Learning (HRL) — The AlphaStar Blueprint</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Lesson 0003 &bull; Plain English &bull; Hierarchical RL & AlphaStar</div>
+      <h1>Hierarchical Reinforcement Learning (HRL)</h1>
+      <p class="subtitle">How DeepMind's AlphaStar, OpenAI Five, and our farming bot solve massive strategy games using two-tier Manager-Worker architecture.</p>
+    </header>
+
+    <div class="callout info">
+      <strong>Core Learning Objective:</strong> Learn how grandmaster game AIs tackle impossibly large decision spaces (over $10^{13}$ choices every second) by separating high-level strategic thinking (the Macro Manager) from lightning-fast tactical execution (the Micro Worker).
+    </div>
+
+    <h2>Part 1: The Non-Technical Guide (Intuition First)</h2>
+
+    <h3>1. The "CEO vs. The Factory Floor" Analogy</h3>
+    <p>
+      Imagine a large company with 500 factory workers.
+    </p>
+    <p>
+      If the CEO tries to tell every single worker which foot to step with, which wrench to pick up, and which screw to turn every second, two things happen:
+    </p>
+    <ol>
+      <li>The CEO has a nervous breakdown from information overload.</li>
+      <li>The company goes bankrupt because no one is planning the long-term business strategy.</li>
+    </ol>
+    <div class="card">
+      <p>
+        <strong>How real companies work (Hierarchical Division of Labor):</strong>
+      </p>
+      <ul>
+        <li><strong>The CEO (Macro Manager):</strong> Looks at the market once a month. Decides: <em>"We need 40% electric cars, 60% trucks, and we should expand into Europe."</em></li>
+        <li><strong>The Factory Foreman (Micro Solver):</strong> Takes the CEO's targets and assigns specific workers to specific assembly stations using an optimal schedule.</li>
+      </ul>
+      <p>
+        <strong>In Kaggriculture:</strong> If our neural network tries to control every single step of 5 farmhands across a 10&times;10 grid for 720 turns, there are over <strong>$30,000,000,000,000$ possible move combinations every turn</strong>. The AI gets overwhelmed.
+      </p>
+      <p>
+        Instead, our AI acts like the CEO (deciding crop heatmaps and animal quotas), while an instant math algorithm (the Hungarian Solver) acts like the foreman, assigning chores with zero traffic jams.
+      </p>
+    </div>
+
+    <h3>2. How AlphaStar & OpenAI Five Solved It</h3>
+    <p>
+      In <em>StarCraft II</em>, DeepMind faced the exact same problem with <strong>AlphaStar</strong>: thousands of soldiers, buildings, and mineral miners.
+    </p>
+    <p>
+      AlphaStar split its brain into two layers:
+    </p>
+    <ul>
+      <li><strong>Strategic Layer (Macro):</strong> Decides the high-level battle plan (e.g. <em>"Build 5 Stalkers, research Blink tech, and expand to the bottom-left base"</em>).</li>
+      <li><strong>Tactical Layer (Micro):</strong> Pointer networks that execute instant dodging, firing, and pathfinding on individual units.</li>
+    </ul>
+
+    <div class="card">
+      <h3>How the CEO Communicates with the Staff (The Heatmap Language)</h3>
+      <p>
+        How does the AI CEO tell the workers what to do without micromanaging?
+      </p>
+      <p>
+        It outputs <strong>Spatial Heatmaps</strong> (like a weather map showing where rain is likely):
+      </p>
+      <ul>
+        <li><strong>Melon Heatmap:</strong> Bright green over fertile top-left tiles, dark over rocks.</li>
+        <li><strong>Water Heatmap:</strong> Bright red on tiles that are drying out today.</li>
+      </ul>
+      <p>
+        The micro workers simply look at the heatmap and march toward the brightest tiles. Clean, simple, and collision-free.
+      </p>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2>Part 2: The Technical Architecture & Math</h2>
+    <p>
+      Now let us look at the mathematical formulation of Two-Tier Hierarchical Reinforcement Learning with Proximal Policy Optimization (PPO).
+    </p>
+
+    <h3>1. Semi-Markov Decision Process (SMDP)</h3>
+    <p>
+      In HRL, the environment is modeled as a two-time-scale Semi-Markov Decision Process:
+    </p>
+    <pre><code>Macro-Step T (State S_T)
+       │
+       ▼ [Manager Policy: g_T ~ pi_M(g | S_T)]
+┌─────────────────────────────────────────────────────────────┐
+│ Subgoal / Macro-Potential g_T                                │
+│                                                             │
+│   t=0: Worker a_0 ~ pi_W(a | s_0, g_T) ──► Env step ──► r_0  │
+│   t=1: Worker a_1 ~ pi_W(a | s_1, g_T) ──► Env step ──► r_1  │
+│   ...                                                       │
+│   t=c-1: Worker a_{c-1} ~ pi_W(· | ·, g_T) ──► Env ──► r_{c-1}│
+└─────────────────────────────────────────────────────────────┘
+       │
+       ▼ Aggregate Return R_T^M = sum_{k=0}^{c-1} gamma^k r_{t+k}
+Macro-Step T+1 (State S_{T+1})</code></pre>
+
+    <h3>2. Why Policy Gradients Work Over Non-Differentiable Micro Solvers</h3>
+    <p>
+      In our system, the low-level micro solver is the <strong>Hungarian Bipartite Matching Algorithm</strong> ($\mathcal{O}(N^3)$ via <code>scipy.optimize.linear_sum_assignment</code>).
+    </p>
+    <p>
+      You might wonder: <em>"The Hungarian algorithm uses discrete 'if/else' matching logic. How can PyTorch compute gradients through it?"</em>
+    </p>
+    <div class="callout info">
+      <strong>The Policy Gradient Theorem:</strong><br>
+      $$\nabla_\theta \mathcal{J}(\theta) = \mathbb{E} \left[ \nabla_\theta \log \pi_\theta(\mathbf{a}_{\text{macro}} \mid s) \cdot \hat{A}(s, \mathbf{a}_{\text{macro}}) \right]$$
+      The gradient flows strictly through the <strong>probabilities of the macro decisions</strong> ($\nabla_\theta \log \pi_\theta$). We do <em>not</em> need to backpropagate through the physical simulator or the Hungarian matcher. The matcher is simply part of the external environment engine.
+    </div>
+
+    <h3>3. Comparison: Classical HRL vs. Our Hybrid Architecture</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Classical HRL (FeUdal / HIRO / PPOC)</th>
+          <th>Our Neural Macro + Hungarian Solver</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Worker Sample Efficiency</strong></td>
+          <td>Poor (Needs 10M+ steps to learn walking and basic chores)</td>
+          <td><strong>Instant $\mathcal{O}(1)$</strong> (Zero training steps needed for micro execution)</td>
+        </tr>
+        <tr>
+          <td><strong>Worker Non-Stationarity</strong></td>
+          <td>Severe (Worker policy shifts constantly while Manager learns)</td>
+          <td><strong>Zero</strong> (Hungarian solver is stationary and mathematically optimal)</td>
+        </tr>
+        <tr>
+          <td><strong>Collision Avoidance</strong></td>
+          <td>Stochastic (Workers frequently bump into each other)</td>
+          <td><strong>Guaranteed</strong> (Deterministic Manhattan reservation grid)</td>
+        </tr>
+        <tr>
+          <td><strong>Strategic Adaptability</strong></td>
+          <td>High (Neural Manager explores continuous goal space)</td>
+          <td><strong>High</strong> (Neural Policy emits continuous crop & market heatmaps)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4. Stabilizing Multi-Head PPO with GradNorm</h3>
+    <p>
+      Our neural network outputs multiple decisions simultaneously (Crop Heatmaps, Workforce, Land Expansion, Market Fractions, Value Critic).
+    </p>
+    <p>
+      To prevent one loss from overpowering the others, we use <strong>GradNorm</strong> (Chen et al., 2018):
+    </p>
+    <pre><code># Dynamically balances task loss weights w_i based on gradient norms:
+G_i(t) = || grad_W ( w_i(t) * L_i(t) ) ||_2
+Target_i = Mean_G * ( L_i(t) / Initial_L_i )^alpha
+Update w_i to minimize |G_i(t) - Target_i|</code></pre>
+
+    <h2>Part 3: Interactive Knowledge Check</h2>
+    <div class="quiz-box" id="quiz-3">
+      <div class="quiz-title">Concept Check: Why is a Hybrid Neural Macro + Hungarian Solver better than a 100% Neural end-to-end bot?</div>
+      <ul class="quiz-options">
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'The Hungarian solver requires Scipy in CPU memory.')">
+          A) Because the Hungarian solver uses zero CPU memory.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, true, 'Spot on! The Hungarian algorithm solves multi-agent routing instantly with zero training, freeing the neural network to focus purely on grandmaster strategy.')">
+          B) Because the Hungarian solver solves worker routing instantly with zero sample inefficiency, letting the neural network focus purely on high-level strategy.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Neural policies can be trained with any discount factor.')">
+          C) Because pure neural workers cannot run with a discount factor gamma below 0.99.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Action masking is independent of the micro solver.')">
+          D) Because pure neural networks cannot support action masking.
+        </li>
+      </ul>
+      <div class="quiz-feedback" id="feedback-3"></div>
+    </div>
+
+    <h2>Summary & What We Learned</h2>
+    <ol>
+      <li><strong>Macro vs Micro:</strong> Splitting strategy (Macro Manager) from execution (Micro Solver) collapses a $10^{13}$ action space down to simple, manageable decisions.</li>
+      <li><strong>The Heatmap Bridge:</strong> The neural policy communicates with workers by painting 2D spatial priority heatmaps.</li>
+      <li><strong>Hybrid Dominance:</strong> Combining a neural strategic brain with a deterministic mathematical solver eliminates sample waste and guarantees zero worker collisions.</li>
+    </ol>
+
+    <footer>
+      <span><a href="0002-optimal-rl-reward-and-penalty-design.html">&larr; Back to Lesson 2</a></span>
+      <span><a href="../reference/03-hierarchical-rl-and-alphastar-architecture.html">Go to Reference 03 &rarr;</a></span>
+    </footer>
+  </div>
+
+  <script>
+    function checkAnswer(el, isCorrect, explanation) {
+      const parent = el.closest('.quiz-box');
+      const feedback = parent.querySelector('.quiz-feedback');
+      const options = parent.querySelectorAll('.quiz-option');
+      
+      options.forEach(opt => {
+        opt.classList.remove('selected-correct', 'selected-wrong');
+      });
+
+      if (isCorrect) {
+        el.classList.add('selected-correct');
+        feedback.className = 'quiz-feedback show callout info';
+        feedback.innerHTML = '<strong>Excellent!</strong> ' + explanation;
+      } else {
+        el.classList.add('selected-wrong');
+        feedback.className = 'quiz-feedback show callout danger';
+        feedback.innerHTML = '<strong>Try again:</strong> ' + explanation;
+      }
+    }
+  </script>
+</body>
+</html>

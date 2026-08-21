@@ -357,9 +357,10 @@ def parse_replay_transitions(
             else:
                 land_expand_target = 0.0
 
-            # 4. Workforce Hiring Target
+            # 4. Workforce Hiring Target (clamped to 0..12 category range)
             hands = farm.get("hands", [])
-            workforce_target = int(len(hands)) if isinstance(hands, (list, tuple)) else 0
+            raw_wf = len(hands) if isinstance(hands, (list, tuple)) else 0
+            workforce_target = int(min(12, max(0, raw_wf)))
 
             # 5. Autonomous Seed Replenishment Targets (5 dims)
             seed_replenish = np.zeros(5, dtype=np.float32)
@@ -447,10 +448,11 @@ class AWILDataset(Dataset):
         # If baseline model provided, evaluate baseline values
         if baseline_model is not None and self.transitions:
             baseline_model.eval()
+            dev = next(baseline_model.parameters()).device
             with torch.no_grad():
                 for t in self.transitions:
-                    x_sp = torch.from_numpy(t["spatial"]).float().unsqueeze(0)
-                    x_sc = torch.from_numpy(t["scalar"]).float().unsqueeze(0)
+                    x_sp = torch.from_numpy(t["spatial"]).float().unsqueeze(0).to(dev)
+                    x_sc = torch.from_numpy(t["scalar"]).float().unsqueeze(0).to(dev)
                     val = baseline_model(x_sp, x_sc).item()
                     t["baseline_value"] = val
 
@@ -490,7 +492,7 @@ class AWILDataset(Dataset):
             "target_crop_heatmaps": torch.from_numpy(crop_target).float(),
             "target_livestock_quotas": torch.from_numpy(livestock).float(),
             "target_livestock": torch.from_numpy(livestock).float(),
-            "target_workforce": torch.tensor(t["workforce"], dtype=torch.long),
+            "target_workforce": torch.tensor(min(12, max(0, int(t["workforce"]))), dtype=torch.long),
             "target_land_expand": torch.tensor(t["land_expand"], dtype=torch.float32),
             "target_seed_replenish": torch.from_numpy(t["seed_replenish"]).float(),
             "target_market_fractions": torch.from_numpy(market_fractions).float(),

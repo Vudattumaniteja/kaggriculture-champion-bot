@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 5: The Master Guide to RL Rewards, Penalties, Stress-Testing & Environment Design</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Lesson 0005 &bull; Comprehensive Master Guide &bull; Reward Engineering</div>
+      <h1>The Master Guide to RL Rewards, Penalties, Stress-Testing & Environment Design</h1>
+      <p class="subtitle">An exhaustive, practical blueprint: How to reward, how NOT to reward, how to penalize, how to grill/stress-test your reward program, and how to build the RL environment wrapper.</p>
+    </header>
+
+    <div class="callout info">
+      <strong>Why this lesson exists:</strong> Designing a reward function for a complex multi-asset strategy game is the single most critical step in reinforcement learning. This master guide walks through all five core dimensions: rewarding value, avoiding reward hacking, safe penalties, reward stress-testing (grilling), and building the environment.
+    </div>
+
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#part1">Part 1: The Macro vs. Micro Reward Architecture</a></li>
+      <li><a href="#part2">Part 2: How to Reward (The 5 Value Engines)</a></li>
+      <li><a href="#part3">Part 3: How NOT to Reward (The 5 Deadly Traps & Cobra Effects)</a></li>
+      <li><a href="#part4">Part 4: How to Penalize (Action Masks vs. Valid Penalties)</a></li>
+      <li><a href="#part5">Part 5: How to "Grill" & Stress-Test Your Reward Function</a></li>
+      <li><a href="#part6">Part 6: How to Build the RL Environment & Gym Wrapper</a></li>
+      <li><a href="#part7">Part 7: Interactive Knowledge Check</a></li>
+    </ol>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part1">Part 1: The Macro vs. Micro Reward Architecture</h2>
+    <p>
+      In a pure macro architecture, people often ask: <em>"Do we give RL rewards to the micro solver, to the macro policy, or to both?"</em>
+    </p>
+
+    <div class="card">
+      <h3>The Separation of Concerns</h3>
+      <ul>
+        <li>
+          <strong>The Macro Neural Policy (Trained with RL):</strong><br>
+          Receives <strong>Potential-Based Step Rewards ($r'_t$)</strong> derived from total farm net worth $\Phi(s, t)$. Its job is long-term capital allocation (which crops to prioritize, when to hire farmhands, when to expand land).
+        </li>
+        <li>
+          <strong>The Micro Solver (Deterministic Math):</strong><br>
+          Does <strong>NOT</strong> learn via RL gradients. Instead, it uses a <strong>Deterministic Priority Utility Function ($U_{\text{task}}$)</strong> to rank immediate chores:
+          <pre><code>Task Priorities:
+1. Feed hungry cows/sheep  -> Utility = 1200.0  (Prevents zero milk production)
+2. Water drying crops      -> Utility = 1180.0  (Prevents crop death)
+3. Place animals in coop   -> Utility = 1100.0  (Unlocks daily yield)
+4. Harvest mature crops    -> Utility = 850-890  (Fills shed with sellable produce)
+5. Plant seeds             -> Utility = 800.0 + (Heatmap Priority from Macro AI)
+6. Clear weeds             -> Utility = 350.0   (Frees up tile space)</code></pre>
+        </li>
+      </ul>
+      <p>
+        <strong>Why this works:</strong> The Macro AI learns <em>where</em> and <em>what</em> to prioritize through RL rewards. The micro solver deterministically routes the workers using exact shortest paths.
+      </p>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part2">Part 2: How to Reward (The 5 Value Engines)</h2>
+    <p>
+      To reward compounding wealth without modifying the true game objective, we use <strong>Potential-Based Reward Shaping (PBRS)</strong> (Ng et al., 1999).
+    </p>
+    <p>
+      The state potential $\Phi(s_t, t)$ represents the <strong>Total Enterprise Value (TEV)</strong> across 5 distinct asset engines:
+    </p>
+
+    <div class="card">
+      <h3>The 5 Value Engines</h3>
+      <ol>
+        <li>
+          <strong>Engine 1: Liquid Cash ($C_t$):</strong><br>
+          Dollar-for-dollar valuation ($\Phi_{\text{cash}} = 1.0 \times \text{Cash}$). Cash is the ultimate score at Turn 719.
+        </li>
+        <li>
+          <strong>Engine 2: Capital Land Expansion ($\Phi_{\text{land}}$):</strong><br>
+          When the AI buys the Northeast quadrant for $1,000, it gains 25 new plantable tiles. The investment potential amortizes across remaining game turns:
+          $$\Phi_{\text{land}}(t) = \text{Cost} \times \max\left(0, \frac{720 - t}{720}\right)$$
+        </li>
+        <li>
+          <strong>Engine 3: Biological Crop Maturation ($\Phi_{\text{crops}}$):</strong><br>
+          A melon seed costs $80 and yields $1,500 after 12 days. Its potential scales as it grows:
+          $$\Phi_{\text{crop}}(t) = \text{ExpectedRevenue} \times \text{clamp}\left(\frac{720 - t - 24}{T_{\text{mat}} - 24}, 0.0, 1.0\right)$$
+        </li>
+        <li>
+          <strong>Engine 4: Livestock Annuity Stream ($\Phi_{\text{animals}}$):</strong><br>
+          Cows and sheep produce continuous daily yields (Milk $160, Wool $200). Valued at the discounted Net Present Value (NPV) of future yields minus feed costs:
+          $$\Phi_{\text{animal}}(t) = \sum_{\tau = t}^{\min(720, t + 240)} \gamma^{\tau - t} \times (\text{ProductPrice} - \text{FeedCost})$$
+        </li>
+        <li>
+          <strong>Engine 5: Shed Inventory Buffer ($\Phi_{\text{shed}}$):</strong><br>
+          Harvested items waiting in the shed are valued at spot market prices, with a smooth discount starting on Day 28 to force orderly market sale.
+        </li>
+      </ol>
+    </div>
+
+    <div class="callout info">
+      <strong>The 80/20 Hybrid Blend:</strong><br>
+      $$r'_t = 0.80 \times \left[ \gamma \Phi_{\text{self}}(t+1) - \Phi_{\text{self}}(t) \right] + 0.20 \times \left[ \Delta \Phi_{\text{self}} - \Delta \Phi_{\text{opp}} \right]$$
+      80% drives massive wealth creation ($35k–$40k+), while 20% maintains tournament match awareness.
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part3">Part 3: How NOT to Reward (The 5 Deadly Traps)</h2>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>The Deadly Trap</th>
+            <th>What the Engineer Intended</th>
+            <th>How the AI Hacks It (Catastrophic Failure)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Verb / Action Bonuses</strong><br><code>+10 per plant</code></td>
+            <td>Encourage active farming</td>
+            <td><strong>The Cobra Effect:</strong> AI buys cheap wheat seeds, plants them, digs them up, and re-plants them in an infinite loop until bankrupt.</td>
+          </tr>
+          <tr>
+            <td><strong>2. Raw Cash Hoarding</strong><br><code>Reward = Cash Only</code></td>
+            <td>Focus on terminal score</td>
+            <td><strong>Zero Investment:</strong> Spending $1,000 on cows shows up as a -$1,000 loss. The AI hoards starting $3,000 and never builds an economy.</td>
+          </tr>
+          <tr>
+            <td><strong>3. Uniform Broadcasting</strong><br><code>r_t = FinalScore / 720</code></td>
+            <td>Give reward at every step</td>
+            <td><strong>Credit Smearing:</strong> A brilliant investment on Day 3 gets the exact same score as a terrible blunder on Day 29. Learning freezes.</td>
+          </tr>
+          <tr>
+            <td><strong>4. Pure Zero-Sum Margin</strong><br><code>Reward = MyCash - OppCash</code></td>
+            <td>Beat the opponent</td>
+            <td><strong>Low-Effort Satisficing:</strong> Against a weak bot making $3,000, our AI settles for $8,000 (margin +$5,000) and stops scaling production.</td>
+          </tr>
+          <tr>
+            <td><strong>5. Premature Liquidation Bonus</strong><br><code>+Bonus for selling</code></td>
+            <td>Encourage selling goods</td>
+            <td><strong>Panic Dumping:</strong> AI dumps valuable wheat instead of saving 2 units to feed cows, causing cows to starve and milk yields to crash.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part4">Part 4: How to Penalize (Action Masks vs. Valid Penalties)</h2>
+
+    <h3>1. What NEVER to Penalize (Use Action Masking Instead)</h3>
+    <p>
+      Never give negative reward penalties (e.g. -100 points) for:
+    </p>
+    <ul>
+      <li>Trying to buy land or seeds without enough money.</li>
+      <li>Trying to plant on an untilled tile or outside owned boundaries.</li>
+      <li>Trying to hire more than the legal number of farmhands.</li>
+    </ul>
+    <div class="callout danger">
+      <strong>Why penalties fail:</strong> When an exploratory AI gets hit with negative penalties, it learns that <code>PASS</code> gives 0.0 penalty. The policy collapses into <strong>Policy Paralysis (Freezing)</strong>.
+    </div>
+    <div class="callout info">
+      <strong>The Solution (Pre-Softmax Action Masking):</strong><br>
+      Set illegal logits to $-\infty$ (<code>-1e9</code>) inside the neural network before sampling. Illegal moves become mathematically impossible to choose, giving <strong>zero penalty gradient variance</strong>.
+    </div>
+
+    <h3>2. What SHOULD be Penalized (Deadweight & Opportunity Cost)</h3>
+    <p>
+      Penalties must be structured as <strong>Opportunity Cost Decays</strong> inside the potential function $\Phi(s, t)$:
+    </p>
+    <ul>
+      <li><strong>Stranded Seeds on Day 29:</strong> If seeds are bought too late to mature before Turn 720, their potential drops to $0.0$, generating an automatic natural negative step delta:
+        $$r'_t = \gamma \Phi(t+1) - \Phi(t) < 0$$
+      </li>
+      <li><strong>Shed Overflow Spoilage:</strong> Items exceeding the 100-item shed capacity at midnight are destroyed, naturally dropping $\Phi_{\text{shed}}$.</li>
+      <li><strong>Starved Animals:</strong> If an animal is not fed, it produces 0 milk/wool tomorrow, reducing expected NPV potential.</li>
+    </ul>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part5">Part 5: How to "Grill" & Stress-Test Your Reward Program</h2>
+    <p>
+      Before running 500,000 training steps, you must <strong>Grill (Stress-Test)</strong> your reward function using unit tests.
+    </p>
+
+    <div class="card">
+      <h3>The 4 Grilling Stress-Tests</h3>
+      <ol>
+        <li>
+          <strong>Test 1: The Telescoping Sum Invariance Test:</strong><br>
+          Run a random 720-step game. Verify that:
+          $$\sum_{t=0}^{719} \gamma^t r'_t \approx \gamma^{720} \text{Cash}_{720} - \text{Cash}_0$$
+          If the difference is greater than $0.01$, your reward function has a leak and will cause reward hacking!
+        </li>
+        <li>
+          <strong>Test 2: The Loop-Farming Test (Zero Reward for Circular Actions):</strong><br>
+          Simulate an agent that plants a seed and immediately digs it up. Verify that the net reward across the 2-step cycle is <strong>negative or zero</strong> ($\le 0.0$).
+        </li>
+        <li>
+          <strong>Test 3: The Passive Bot Baseline Test:</strong><br>
+          Run an agent that executes <code>PASS</code> for all 720 turns. Verify that its cumulative shaped reward is exactly <strong>$0.0$</strong> (no free points for existing).
+        </li>
+        <li>
+          <strong>Test 4: The Monotonic Investment Test:</strong><br>
+          When cash is converted into high-ROI melon seeds on Day 2, verify that $\Phi(s_{t+1}) \ge \Phi(s_t)$ (investing in good assets does not produce a fake negative penalty).
+        </li>
+      </ol>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part6">Part 6: How to Build the RL Environment & Gym Wrapper</h2>
+    <p>
+      Here is the clean, modular Python environment wrapper structure that integrates our Pure Macro Policy, Hungarian Micro Solver, and PBRS Reward Engine:
+    </p>
+
+    <div class="card">
+      <pre><code>class KaggricultureMacroEnv:
+    """
+    Vectorized Gym-Style Environment for Pure Macro Reinforcement Learning.
+    Translates high-level Macro actions into Hungarian micro execution and PBRS rewards.
+    """
+    def __init__(self, opponent_pool, reward_engine):
+        self.reward_engine = reward_engine
+        self.opponent_pool = opponent_pool
+
+    def step(self, macro_actions: Dict[str, np.ndarray]):
+        # 1. Micro Solver executes physical chores based on macro heatmaps
+        farmer_act, hands_acts = solve_micro_actions(
+            obs=self.current_obs,
+            crop_heatmaps=macro_actions["crop_heatmaps"],
+            livestock_quotas=macro_actions["livestock_quotas"]
+        )
+        
+        # 2. Market Guardrails execute trades
+        market_orders = apply_market_guardrails(
+            market_fractions=macro_actions["market_fractions"],
+            obs=self.current_obs, ...
+        )
+
+        # 3. Step the physical Kaggle simulator
+        next_obs, raw_reward, done, info = self.kaggle_env.step({
+            "farmer": farmer_act, "hands": hands_acts, "market": market_orders
+        })
+
+        # 4. Compute PBRS Shaped Step Reward (80% Wealth / 20% Margin)
+        shaped_reward, metrics = self.reward_engine.compute_step_reward(
+            s_t=self.current_obs,
+            s_next=next_obs,
+            player=0
+        )
+        
+        self.current_obs = next_obs
+        return next_obs, shaped_reward, done, metrics</code></pre>
+    </div>
+
+    <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--border);">
+
+    <h2 id="part7">Part 7: Interactive Knowledge Check</h2>
+    <div class="quiz-box" id="quiz-5">
+      <div class="quiz-title">Concept Check: Why does the Telescoping Sum test guarantee that our AI won't hack the reward function?</div>
+      <ul class="quiz-options">
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'The telescoping test is a mathematical proof of policy invariance, not a speed test.')">
+          A) Because it proves the Python simulator runs in less than 1 millisecond.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, true, 'Spot on! The telescoping sum proves that the sum of per-step rewards strictly equals terminal cash, guaranteeing that intermediate rewards cannot be farmed in artificial loops.')">
+          B) Because it mathematically proves that the sum of all step rewards equals terminal cash, ensuring that no artificial action loop can create fake infinite profit.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'Action masking handles illegal moves; telescoping guarantees value consistency.')">
+          C) Because it automatically generates the pre-softmax action masks.
+        </li>
+        <li class="quiz-option" onclick="checkAnswer(this, false, 'The Hungarian solver is independent of reward telescoping.')">
+          D) Because it forces the Hungarian micro solver to assign farmhands deterministically.
+        </li>
+      </ul>
+      <div class="quiz-feedback" id="feedback-5"></div>
+    </div>
+
+    <h2>Summary of the Master Reward Program</h2>
+    <ol>
+      <li><strong>Reward State Wealth ($\Phi$):</strong> Reward the 5 engines of value (Cash, Land ROI, Growing Crops, Livestock NPV, Inventory).</li>
+      <li><strong>Never Reward Action Verbs:</strong> Avoid the Cobra Effect and circular farming loops.</li>
+      <li><strong>Mask, Don't Penalize:</strong> Gray out illegal moves with pre-softmax action masks to prevent policy paralysis.</li>
+      <li><strong>Grill Before Training:</strong> Run telescoping invariance and loop-farming unit tests before launching 500k training steps.</li>
+    </ol>
+
+    <footer>
+      <span><a href="0004-pure-macro-management-architecture.html">&larr; Back to Lesson 4</a></span>
+      <span><a href="0006-self-play-leagues-and-curriculum-design.html">Go to Lesson 6 &rarr;</a></span>
+    </footer>
+  </div>
+
+  <script>
+    function checkAnswer(el, isCorrect, explanation) {
+      const parent = el.closest('.quiz-box');
+      const feedback = parent.querySelector('.quiz-feedback');
+      const options = parent.querySelectorAll('.quiz-option');
+      
+      options.forEach(opt => {
+        opt.classList.remove('selected-correct', 'selected-wrong');
+      });
+
+      if (isCorrect) {
+        el.classList.add('selected-correct');
+        feedback.className = 'quiz-feedback show callout info';
+        feedback.innerHTML = '<strong>Excellent!</strong> ' + explanation;
+      } else {
+        el.classList.add('selected-wrong');
+        feedback.className = 'quiz-feedback show callout danger';
+        feedback.innerHTML = '<strong>Try again:</strong> ' + explanation;
+      }
+    }
+  </script>
+</body>
+</html>

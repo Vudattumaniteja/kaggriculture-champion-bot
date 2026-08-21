@@ -14,6 +14,14 @@ A validated, modular Self-Play League and Accelerated Curriculum subsystem in `g
 ## Decisions so far
 
 <!-- index of closed tickets will be recorded here -->
+<!-- GitHub Map Issue: https://github.com/Vudattumaniteja/kaggriculture-champion-bot/issues/26 -->
+<!-- Child Tickets:
+  #27 Parameterized Heuristic Specialist Archetypes (wayfinder:prototype)
+  #28 PFSP Checkpoint and Loss-Weighted Rematch Ladder (wayfinder:grilling)
+  #29 Fast-Forward Warmup Pairing Matrix & State Diversity (wayfinder:prototype)
+  #30 Sub-Trajectory Prioritized Experience Replay for Weak Matches (wayfinder:grilling)
+  #31 Training Loop Integration & Benchmark Unit Tests (wayfinder:task)
+-->
 
 ## Not yet specified
 
